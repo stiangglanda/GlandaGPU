@@ -36,7 +36,7 @@ architecture Behavioral of vga_controller is
     signal h_cnt : integer range 0 to H_TOTAL - 1 := 0;
     signal v_cnt : integer range 0 to V_TOTAL - 1 := 0;
 	 
-	 signal video_on_int : std_logic;
+	signal video_on_int : std_logic;
 
 begin
 
@@ -85,6 +85,7 @@ begin
     -- Video On
 	video_on_int <= '1' when (h_cnt < H_ACTIVE) and (v_cnt < V_ACTIVE) else '0';
 	video_on <= video_on_int;
+    
     -- Pattern Generator(Drawing Logic)
     process(clk)
     begin
