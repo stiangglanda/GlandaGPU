@@ -8,7 +8,7 @@ entity vga_controller is
         reset   : in  STD_LOGIC;
         hsync   : out STD_LOGIC;
         vsync   : out STD_LOGIC;
-		video_on: out STD_LOGIC;
+		  video_on: out STD_LOGIC;
         red     : out STD_LOGIC_VECTOR (3 downto 0);
         green   : out STD_LOGIC_VECTOR (3 downto 0);
         blue    : out STD_LOGIC_VECTOR (3 downto 0)
@@ -35,6 +35,8 @@ architecture Behavioral of vga_controller is
     -- Counters
     signal h_cnt : integer range 0 to H_TOTAL - 1 := 0;
     signal v_cnt : integer range 0 to V_TOTAL - 1 := 0;
+	 
+	 signal video_on_int : std_logic;
 
 begin
 
@@ -81,13 +83,13 @@ begin
     end process;
     
     -- Video On
-	video_on <= '1' when (h_cnt < H_ACTIVE) and (v_cnt < V_ACTIVE) else '0';
-
+	video_on_int <= '1' when (h_cnt < H_ACTIVE) and (v_cnt < V_ACTIVE) else '0';
+	video_on <= video_on_int;
     -- Pattern Generator(Drawing Logic)
     process(clk)
     begin
         if rising_edge(clk) then
-            if video_on = '1' then
+            if video_on_int = '1' then
                 -- white box
                 if (h_cnt > 100 and h_cnt < 150) and (v_cnt > 100 and v_cnt < 150) then
                     red   <= "1111"; 

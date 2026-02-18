@@ -1,0 +1,33 @@
+# Quartus temporary files
+db/
+incremental_db/
+greybox_tmp/
+hc_output/
+/output_files/
+/qdb/
+
+# Simulation files (ModelSim / Questa)
+simulation/
+work/
+modelsim.ini
+transcript
+*.wlf
+*.vstf
+
+# User-specific settings (Window positions, etc.)
+*.qws
+*.bak
+*.orig
+
+# Log files
+*.txt
+*.log
+*.rpt
+*.summary
+
+# Project output / Generated images
+vga_output.ppm
+
+# OS specific
+.DS_Store
+Thumbs.db
