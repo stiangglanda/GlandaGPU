@@ -9,13 +9,11 @@ This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal g
 | **Refresh Rate**| 60 Hz | 25.175 MHz Pixel Clock |
 | **Color Depth** | 12-bit (4-4-4) | Stored as 16-bit words (0x0RGB) |
 
-
 ## Architecture
 The GPU currently consists of a **VGA Controller** that generates HSYNC/VSYNC signals and displays a test pattern.
 
 ## The First Generated Frame of the GPU
-![vga_output.png]
-
+<img width="640" height="480" alt="vga_output" src="https://github.com/user-attachments/assets/7aa8341c-4a18-4a21-8b9a-545c005ddf8e" />
 
 ## Register Map (First draft)
 
@@ -34,8 +32,8 @@ The GPU currently consists of a **VGA Controller** that generates HSYNC/VSYNC si
 ## Commands(First draft)
 
 ### Solid Fill (Clear Screen)
-*   **Input:** `COLOR_FG`
-*   **Action:** Writes the color to every address in VRAM.
+- **Input:** `COLOR_FG`
+- **Action:** Writes the color to every address in VRAM.
 
 ### Draw Rectangle
 - **Input:** 
@@ -43,15 +41,15 @@ The GPU currently consists of a **VGA Controller** that generates HSYNC/VSYNC si
     - `COORD_X1` (Width), 
     - `COORD_Y1` (Height), 
     - `COLOR_FG`.
-*   **Action:** Iterates X and Y counters to fill a region of memory.
+- **Action:** Iterates X and Y counters to fill a region of memory.
 
 ### Draw Line
-*   **Input:** 
+- **Input:** 
     - `COORD_X0`, `COORD_Y0` (Start)
     - `COORD_X1`, `COORD_Y1` (End), 
     - `COLOR_FG`.
-*   **Action:** Implements Bresenham’s Line Algorithm in hardware state machine.
+- **Action:** Implements Bresenham’s Line Algorithm in hardware state machine.
 
 ## Interrupts
-*   `IRQ_VSYNC`: Fires at the start of vertical blanking
-*   `IRQ_IDLE`: Fires when the Command Engine finishes drawing
+- `IRQ_VSYNC`: Fires at the start of vertical blanking
+- `IRQ_IDLE`: Fires when the Command Engine finishes drawing
