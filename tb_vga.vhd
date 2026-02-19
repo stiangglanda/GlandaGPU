@@ -16,6 +16,7 @@ architecture sim of tb_vga is
     signal green   : std_logic_vector(3 downto 0);
     signal blue    : std_logic_vector(3 downto 0);
 
+    signal tb_reg_cmd      :  std_logic_vector(3 downto 0); -- 1=Rect, 2=Clear
     signal tb_reg_x, tb_reg_y, tb_reg_w, tb_reg_h : unsigned(9 downto 0) := (others => '0');
     signal tb_reg_color : std_logic_vector(11 downto 0) := (others => '0');
     signal tb_reg_start : std_logic := '0';
@@ -31,6 +32,7 @@ begin
         port map (
             clk   => clk,
             reset   => reset,
+            reg_cmd => tb_reg_cmd,
             reg_x => tb_reg_x,
             reg_y => tb_reg_y,
             reg_w => tb_reg_w,
@@ -62,38 +64,49 @@ begin
     begin
         -- Reset
         reset <= '1';
+        tb_reg_start <= '0';
         wait for 100 ns;
         reset <= '0';
         wait for 100 ns;
+        wait until rising_edge(clk);
 
-        -- Draw Blue Rectangle
-        tb_reg_x     <= to_unsigned(50, 10);
-        tb_reg_y     <= to_unsigned(50, 10);
-        tb_reg_w     <= to_unsigned(200, 10);
-        tb_reg_h     <= to_unsigned(150, 10);
-        tb_reg_color <= x"00F"; -- Blau
-        
-        wait for CLK_PERIOD;
+        -- clear screen
+        tb_reg_cmd   <= x"2";
+        tb_reg_color <= x"030"; -- Dark Green
         tb_reg_start <= '1';
-        wait for CLK_PERIOD;
+        wait until rising_edge(clk);
         tb_reg_start <= '0';
-
+        
+        -- wait until busy, then until done
+        wait until tb_gpu_busy = '1';
         wait until tb_gpu_busy = '0';
+        
+        report "Clear Screen finished";
         wait for 1 us;
 
-        -- Draw Red Rectangle above the blue one
+        -- Draw red rectangle
+        tb_reg_cmd   <= x"1";
         tb_reg_x     <= to_unsigned(100, 10);
-        tb_reg_y     <= to_unsigned(80, 10);
-        tb_reg_w     <= to_unsigned(30, 10);
-        tb_reg_h     <= to_unsigned(30, 10);
-        tb_reg_color <= x"F00"; -- Rot
+        tb_reg_y     <= to_unsigned(100, 10);
+        tb_reg_w     <= to_unsigned(50, 10);
+        tb_reg_h     <= to_unsigned(50, 10);
+        tb_reg_color <= x"F00"; -- red
         
-        wait for CLK_PERIOD;
+        wait until rising_edge(clk);
         tb_reg_start <= '1';
-        wait for CLK_PERIOD;
+        wait until rising_edge(clk);
         tb_reg_start <= '0';
 
+        -- wait until busy, then until done
+        wait until tb_gpu_busy = '1';
         wait until tb_gpu_busy = '0';
+        
+        report "GPU: Red Rectangle finished";
+
+        wait until falling_edge(vsync);
+        wait until falling_edge(vsync);
+        
+        sim_running <= false;
         wait;
     end process;
 
@@ -132,7 +145,6 @@ begin
             writeline(outfile, l); 
         end loop;
 
-        sim_running <= false;
         report "Frame captured to vga_output.ppm";
         wait;
     end process;

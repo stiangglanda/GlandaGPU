@@ -7,7 +7,8 @@ entity top_gpu is
         clk   : in std_logic;
         reset : in std_logic;
 
-        -- "CPU" Register Interface (Eingänge für die Testbench)
+        -- Register Interface
+        reg_cmd   : in  std_logic_vector(3 downto 0); -- 1=Rect, 2=Clear
         reg_x     : in  unsigned(9 downto 0);
         reg_y     : in  unsigned(9 downto 0);
         reg_w     : in  unsigned(9 downto 0);
@@ -48,6 +49,7 @@ begin
         port map (
             clk       => clk,
             reset     => reset,
+            reg_cmd   => reg_cmd,
             reg_x     => reg_x,
             reg_y     => reg_y,
             reg_w     => reg_w,
