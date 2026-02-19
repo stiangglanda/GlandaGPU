@@ -89,7 +89,7 @@ begin
             hsync_v1    <= hsync_i;
             vsync_v1    <= vsync_i;
             video_on_v1 <= video_on_i;
-+
+            
             -- in sync with the RGB output
             hsync_v2    <= hsync_v1;
             vsync_v2    <= vsync_v1;

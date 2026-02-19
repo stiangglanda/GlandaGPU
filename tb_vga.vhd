@@ -15,6 +15,11 @@ architecture sim of tb_vga is
     signal red     : std_logic_vector(3 downto 0);
     signal green   : std_logic_vector(3 downto 0);
     signal blue    : std_logic_vector(3 downto 0);
+
+    signal tb_reg_x, tb_reg_y, tb_reg_w, tb_reg_h : unsigned(9 downto 0) := (others => '0');
+    signal tb_reg_color : std_logic_vector(11 downto 0) := (others => '0');
+    signal tb_reg_start : std_logic := '0';
+    signal tb_gpu_busy  : std_logic;
     
     -- Simulation Control
     constant CLK_PERIOD : time := 40 ns; -- 25 MHz
@@ -26,6 +31,13 @@ begin
         port map (
             clk   => clk,
             reset   => reset,
+            reg_x => tb_reg_x,
+            reg_y => tb_reg_y,
+            reg_w => tb_reg_w,
+            reg_h => tb_reg_h,
+            reg_color => tb_reg_color,
+            reg_start => tb_reg_start,
+            gpu_busy  => tb_gpu_busy,
             hsync => hsync,
             vsync => vsync,
             video_on => video_on,
@@ -43,6 +55,45 @@ begin
             clk <= '1';
             wait for CLK_PERIOD / 2;
         end loop;
+        wait;
+    end process;
+
+    stimuli: process
+    begin
+        -- Reset
+        reset <= '1';
+        wait for 100 ns;
+        reset <= '0';
+        wait for 100 ns;
+
+        -- Draw Blue Rectangle
+        tb_reg_x     <= to_unsigned(50, 10);
+        tb_reg_y     <= to_unsigned(50, 10);
+        tb_reg_w     <= to_unsigned(200, 10);
+        tb_reg_h     <= to_unsigned(150, 10);
+        tb_reg_color <= x"00F"; -- Blau
+        
+        wait for CLK_PERIOD;
+        tb_reg_start <= '1';
+        wait for CLK_PERIOD;
+        tb_reg_start <= '0';
+
+        wait until tb_gpu_busy = '0';
+        wait for 1 us;
+
+        -- Draw Red Rectangle above the blue one
+        tb_reg_x     <= to_unsigned(100, 10);
+        tb_reg_y     <= to_unsigned(80, 10);
+        tb_reg_w     <= to_unsigned(30, 10);
+        tb_reg_h     <= to_unsigned(30, 10);
+        tb_reg_color <= x"F00"; -- Rot
+        
+        wait for CLK_PERIOD;
+        tb_reg_start <= '1';
+        wait for CLK_PERIOD;
+        tb_reg_start <= '0';
+
+        wait until tb_gpu_busy = '0';
         wait;
     end process;
 

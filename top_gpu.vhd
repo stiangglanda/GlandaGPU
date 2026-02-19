@@ -6,6 +6,17 @@ entity top_gpu is
     Port ( 
         clk   : in std_logic;
         reset : in std_logic;
+
+        -- "CPU" Register Interface (Eingänge für die Testbench)
+        reg_x     : in  unsigned(9 downto 0);
+        reg_y     : in  unsigned(9 downto 0);
+        reg_w     : in  unsigned(9 downto 0);
+        reg_h     : in  unsigned(9 downto 0);
+        reg_color : in  std_logic_vector(11 downto 0);
+        reg_start : in  std_logic;
+        gpu_busy  : out std_logic;
+
+        -- VGA Interface
         hsync : out std_logic;
         vsync : out std_logic;
         video_on : out std_logic;
@@ -33,6 +44,22 @@ begin
             dout_b => vram_data_vga
         );
 
+    engine_inst : entity work.gpu_engine
+        port map (
+            clk       => clk,
+            reset     => reset,
+            reg_x     => reg_x,
+            reg_y     => reg_y,
+            reg_w     => reg_w,
+            reg_h     => reg_h,
+            reg_color => reg_color,
+            reg_start => reg_start,
+            busy      => gpu_busy,
+            vram_we   => gpu_we,
+            vram_addr => gpu_addr,
+            vram_din  => gpu_din
+        );
+
     -- VGA Controller Instanz
     vga_inst : entity work.vga_controller
         port map (
@@ -47,21 +74,5 @@ begin
             green      => green,
             blue       => blue
         );
-
-    -- Initialise VRAM with white
-    process(clk)
-        variable count : integer := 0;
-    begin
-        if rising_edge(clk) then
-            if count < 307200 then -- 640x480 = 307200 Pixel
-                gpu_we   <= '1';
-                gpu_addr <= std_logic_vector(to_unsigned(count, 19));
-                gpu_din  <= x"FFF"; 
-                count := count + 1;
-            else
-                gpu_we <= '0';
-            end if;
-        end if;
-    end process;
 
 end Structural;
