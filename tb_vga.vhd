@@ -22,7 +22,7 @@ architecture sim of tb_vga is
 begin
 
     -- Instantiate VGA Controller
-    uut: entity work.vga_controller
+    uut: entity work.top_gpu
         port map (
             clk   => clk,
             reset   => reset,

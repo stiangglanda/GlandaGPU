@@ -4,14 +4,16 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity vga_controller is
     Port ( 
-        clk     : in  STD_LOGIC; -- 25 MHz
-        reset   : in  STD_LOGIC;
-        hsync   : out STD_LOGIC;
-        vsync   : out STD_LOGIC;
-		  video_on: out STD_LOGIC;
-        red     : out STD_LOGIC_VECTOR (3 downto 0);
-        green   : out STD_LOGIC_VECTOR (3 downto 0);
-        blue    : out STD_LOGIC_VECTOR (3 downto 0)
+        clk         : in  STD_LOGIC; -- 25 MHz
+        reset       : in  STD_LOGIC;
+        pixel_data  : in  STD_LOGIC_VECTOR(11 downto 0);
+        pixel_addr  : out STD_LOGIC_VECTOR(18 downto 0);
+        hsync       : out STD_LOGIC;
+        vsync       : out STD_LOGIC;
+		video_on    : out STD_LOGIC;
+        red         : out STD_LOGIC_VECTOR (3 downto 0);
+        green       : out STD_LOGIC_VECTOR (3 downto 0);
+        blue        : out STD_LOGIC_VECTOR (3 downto 0)
     );
 end vga_controller;
 
@@ -85,36 +87,20 @@ begin
     -- Video On
 	video_on_int <= '1' when (h_cnt < H_ACTIVE) and (v_cnt < V_ACTIVE) else '0';
 	video_on <= video_on_int;
-    
-    -- Pattern Generator(Drawing Logic)
+
+    -- Read pixel from VRAM
+    pixel_addr <= std_logic_vector(to_unsigned(v_cnt * 640 + h_cnt, 19)) 
+              when (video_on_int = '1') else (others => '0');
+
     process(clk)
     begin
         if rising_edge(clk) then
             if video_on_int = '1' then
-                -- white box
-                if (h_cnt > 100 and h_cnt < 150) and (v_cnt > 100 and v_cnt < 150) then
-                    red   <= "1111"; 
-                    green <= "1111";
-                    blue  <= "1111";
-                elsif h_cnt < 213 then -- left red
-                    red   <= "1111";
-                    green <= "0000";
-                    blue  <= "0000";
-                elsif h_cnt < 426 then -- middle green
-                    red   <= "0000";
-                    green <= "1111";
-                    blue  <= "0000";
-                else -- right blue
-                    red   <= "0000";
-                    green <= "0000";
-                    blue  <= "1111";
-                end if;
-
+                red   <= pixel_data(11 downto 8); -- TODO delay problem pixel kommt erst im nächsten takt
+                green <= pixel_data(7 downto 4);  -- erster Pixel ist immer schwarz, da pixel_data erst im nächsten Takt gültig ist
+                blue  <= pixel_data(3 downto 0);
             else
-                -- BLANKING INTERVAL IMPORTANT!
-                red   <= "0000";
-                green <= "0000";
-                blue  <= "0000";
+                red <= "0000"; green <= "0000"; blue <= "0000";
             end if;
         end if;
     end process;
