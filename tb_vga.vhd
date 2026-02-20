@@ -20,6 +20,8 @@ architecture sim of tb_vga is
     signal tb_bus_we     : std_logic;
     signal tb_bus_din    : std_logic_vector(31 downto 0);
     signal tb_bus_dout   : std_logic_vector(31 downto 0);
+
+    signal tb_irq : std_logic;
     
     -- Simulation Control
     constant CLK_PERIOD : time := 40 ns; -- 25 MHz
@@ -40,7 +42,8 @@ begin
             video_on => video_on,
             red   => red,
             green => green,
-            blue  => blue
+            blue  => blue,
+            irq   => tb_irq
         );
 
     -- Clock Generation
@@ -100,6 +103,46 @@ begin
                 exit when tb_bus_dout(0) = '0';
             end loop;
         end procedure;
+
+        procedure wait_and_clear_irq is
+            variable isr_val : std_logic_vector(31 downto 0);
+        begin
+            if tb_irq = '1' then
+                wait until tb_irq = '0';
+            end if;
+
+            wait until tb_irq = '1';
+            
+            wait for 10 ns; -- wait for vaulues to stabilize
+
+            loop
+                wait until rising_edge(clk);
+                tb_bus_addr <= x"5"; -- ISR Address
+                tb_bus_we   <= '0';
+                
+                wait until rising_edge(clk);
+                wait for 1 ns;
+                
+                isr_val := tb_bus_dout;
+                
+                if unsigned(isr_val) /= 0 then
+                    exit;
+                end if;
+            end loop;
+
+            report "Interrupt received. ISR Value: " & integer'image(to_integer(unsigned(isr_val)));
+
+            -- W1C to acknwoledge the interrupt
+            wait until rising_edge(clk);
+            tb_bus_we   <= '1';
+            tb_bus_din  <= isr_val;
+            
+            wait until rising_edge(clk);
+            tb_bus_we   <= '0';
+            tb_bus_din  <= (others => '0');
+            
+            wait until tb_irq = '0';
+        end procedure;
     begin
         reset <= '1';
         wait for 100 ns;
@@ -108,12 +151,20 @@ begin
 
         report "Starting GPU";
 
-        -- Clear Screen with Dark Blue
+        -- 6 = IER (Interrupt Enable Register) Bit 0 (Done) Bit 1 (VSync) -> 0x03
+        cpu_write(6, x"00000003"); 
+        report "Interrupts enabled.";
+
+        --- Clear Screen
         cpu_write(4, x"00000008"); -- Dark Blue
-        cpu_write_and_start(1, x"00000011"); -- CMD=1 (Clear), Start=Bit 4 -> 0x11
-        
-        wait_gpu_ready;
-        report "Clear Screen Done";
+        cpu_write(1, x"00000011"); -- CMD 1, Start Bit 4
+
+        wait_and_clear_irq; -- Warten auf Done
+        report "Clear Screen Done (via Interrupt)";
+
+        report "Waiting for VSync Interrupt";
+        wait_and_clear_irq; -- Warten auf VSync
+        report "VSync reached";
 
         -- Draw Yellow Rectangle
         cpu_write(2, x"00320032"); -- X0=50, Y0=50
@@ -121,7 +172,7 @@ begin
         cpu_write(4, x"00000FF0"); -- Yellow
         cpu_write_and_start(1, x"00000012"); -- CMD=1 (Rect), Start=Bit 4 -> 0x12
 
-        wait_gpu_ready;
+        wait_and_clear_irq;
         report "Rectangle Done";
 
         -- Draw white line
@@ -130,7 +181,7 @@ begin
         cpu_write(4, x"00000FFF"); -- White
         cpu_write_and_start(1, x"00000013"); -- CMD=3 (Line), Start=Bit 4 -> 0x13
 
-        wait_gpu_ready;
+        wait_and_clear_irq;
         report "Line Done";
 
         wait for 20 ms;

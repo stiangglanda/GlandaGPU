@@ -17,7 +17,9 @@ entity top_gpu is
         hsync : out std_logic;
         vsync : out std_logic;
         video_on : out std_logic;
-        red, green, blue : out std_logic_vector(3 downto 0)
+        red, green, blue : out std_logic_vector(3 downto 0);
+
+        irq : out std_logic
     );
 end top_gpu;
 
@@ -72,7 +74,8 @@ begin
             gpu_cmd    => reg_cmd,
             gpu_start  => reg_start,
             gpu_busy   => gpu_busy,
-            vga_vsync  => vsync_internal
+            vga_vsync  => vsync_internal,
+            irq        => irq
         );
 
     -- GPU Engine Instanz
