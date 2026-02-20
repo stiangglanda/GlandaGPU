@@ -16,7 +16,7 @@ architecture sim of tb_vga is
     signal green   : std_logic_vector(3 downto 0);
     signal blue    : std_logic_vector(3 downto 0);
 
-    signal tb_reg_cmd      :  std_logic_vector(3 downto 0); -- 1=Rect, 2=Clear
+    signal tb_reg_cmd      :  std_logic_vector(3 downto 0); -- 1=Clear, 2=Rect, 3=Line
     signal tb_reg_x, tb_reg_y, tb_reg_w, tb_reg_h : unsigned(9 downto 0) := (others => '0');
     signal tb_reg_color : std_logic_vector(11 downto 0) := (others => '0');
     signal tb_reg_start : std_logic := '0';
@@ -71,7 +71,7 @@ begin
         wait until rising_edge(clk);
 
         -- clear screen
-        tb_reg_cmd   <= x"2";
+        tb_reg_cmd   <= x"1";
         tb_reg_color <= x"030"; -- Dark Green
         tb_reg_start <= '1';
         wait until rising_edge(clk);
@@ -85,7 +85,7 @@ begin
         wait for 1 us;
 
         -- Draw red rectangle
-        tb_reg_cmd   <= x"1";
+        tb_reg_cmd   <= x"2";
         tb_reg_x     <= to_unsigned(100, 10);
         tb_reg_y     <= to_unsigned(100, 10);
         tb_reg_w     <= to_unsigned(50, 10);
@@ -101,7 +101,39 @@ begin
         wait until tb_gpu_busy = '1';
         wait until tb_gpu_busy = '0';
         
-        report "GPU: Red Rectangle finished";
+        report "Red Rectangle finished";
+
+        -- Draw line
+        tb_reg_cmd   <= x"3"; -- DRAW_LINE
+        tb_reg_x     <= to_unsigned(10, 10);  -- X0
+        tb_reg_y     <= to_unsigned(10, 10);  -- Y0
+        tb_reg_w     <= to_unsigned(600, 10); -- X1
+        tb_reg_h     <= to_unsigned(400, 10); -- Y1
+        tb_reg_color <= x"FFF"; -- White
+        
+        wait until rising_edge(clk); 
+        tb_reg_start <= '1';
+        wait until rising_edge(clk); 
+        tb_reg_start <= '0';
+        wait until tb_gpu_busy = '1';
+        wait until tb_gpu_busy = '0';
+
+        report "first line finished";
+
+        tb_reg_x     <= to_unsigned(300, 10);
+        tb_reg_y     <= to_unsigned(10, 10);
+        tb_reg_w     <= to_unsigned(350, 10);
+        tb_reg_h     <= to_unsigned(450, 10);
+        tb_reg_color <= x"0F0"; -- Green
+
+        wait until rising_edge(clk); 
+        tb_reg_start <= '1';
+        wait until rising_edge(clk); 
+        tb_reg_start <= '0';
+        wait until tb_gpu_busy = '1';
+        wait until tb_gpu_busy = '0';
+
+        report "second line finished";
 
         wait until falling_edge(vsync);
         wait until falling_edge(vsync);
