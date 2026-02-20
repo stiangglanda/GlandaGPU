@@ -16,30 +16,25 @@ architecture sim of tb_vga is
     signal green   : std_logic_vector(3 downto 0);
     signal blue    : std_logic_vector(3 downto 0);
 
-    signal tb_reg_cmd      :  std_logic_vector(3 downto 0); -- 1=Clear, 2=Rect, 3=Line
-    signal tb_reg_x, tb_reg_y, tb_reg_w, tb_reg_h : unsigned(9 downto 0) := (others => '0');
-    signal tb_reg_color : std_logic_vector(11 downto 0) := (others => '0');
-    signal tb_reg_start : std_logic := '0';
-    signal tb_gpu_busy  : std_logic;
+    signal tb_bus_addr   : std_logic_vector(3 downto 0);
+    signal tb_bus_we     : std_logic;
+    signal tb_bus_din    : std_logic_vector(31 downto 0);
+    signal tb_bus_dout   : std_logic_vector(31 downto 0);
     
     -- Simulation Control
     constant CLK_PERIOD : time := 40 ns; -- 25 MHz
     signal sim_running  : boolean := true;
 begin
 
-    -- Instantiate VGA Controller
+    -- Instantiate GPU
     uut: entity work.top_gpu
         port map (
             clk   => clk,
             reset   => reset,
-            reg_cmd => tb_reg_cmd,
-            reg_x => tb_reg_x,
-            reg_y => tb_reg_y,
-            reg_w => tb_reg_w,
-            reg_h => tb_reg_h,
-            reg_color => tb_reg_color,
-            reg_start => tb_reg_start,
-            gpu_busy  => tb_gpu_busy,
+            bus_addr => tb_bus_addr,
+            bus_we => tb_bus_we,
+            bus_din => tb_bus_din,
+            bus_dout => tb_bus_dout,
             hsync => hsync,
             vsync => vsync,
             video_on => video_on,
@@ -61,83 +56,84 @@ begin
     end process;
 
     stimuli: process
+        -- Helper functions
+        procedure cpu_write(addr : in integer; data : in std_logic_vector(31 downto 0)) is
+        begin
+            wait until rising_edge(clk);
+            tb_bus_addr <= std_logic_vector(to_unsigned(addr, 4));
+            tb_bus_din  <= data;
+            tb_bus_we   <= '1';
+            wait until rising_edge(clk);
+            tb_bus_we   <= '0';
+            tb_bus_din  <= (others => '0');
+        end procedure;
+
+        procedure cpu_write_and_start(addr : in integer; data : in std_logic_vector(31 downto 0)) is
+        begin
+            -- 1. Befehl schreiben
+            wait until rising_edge(clk);
+            tb_bus_addr <= std_logic_vector(to_unsigned(addr, 4));
+            tb_bus_din  <= data;
+            tb_bus_we   <= '1';
+            wait until rising_edge(clk);
+            tb_bus_we   <= '0';
+        
+            -- shouldent be necessary anymore, but just to be safe
+            for i in 1 to 5 loop
+                wait until rising_edge(clk);
+            end loop;
+            
+            loop
+                tb_bus_addr <= x"0";
+                wait until rising_edge(clk);
+                exit when tb_bus_dout(0) = '0';
+            end loop;
+        end procedure;
+
+        -- Wait until Busy=0
+        procedure wait_gpu_ready is
+        begin
+            loop
+                tb_bus_addr <= x"0"; 
+                wait until rising_edge(clk);
+                -- Bit 0(Busy)
+                exit when tb_bus_dout(0) = '0';
+            end loop;
+        end procedure;
     begin
-        -- Reset
         reset <= '1';
-        tb_reg_start <= '0';
         wait for 100 ns;
         reset <= '0';
         wait for 100 ns;
-        wait until rising_edge(clk);
 
-        -- clear screen
-        tb_reg_cmd   <= x"1";
-        tb_reg_color <= x"030"; -- Dark Green
-        tb_reg_start <= '1';
-        wait until rising_edge(clk);
-        tb_reg_start <= '0';
+        report "Starting GPU";
+
+        -- Clear Screen with Dark Blue
+        cpu_write(4, x"00000008"); -- Dark Blue
+        cpu_write_and_start(1, x"00000011"); -- CMD=1 (Clear), Start=Bit 4 -> 0x11
         
-        -- wait until busy, then until done
-        wait until tb_gpu_busy = '1';
-        wait until tb_gpu_busy = '0';
-        
-        report "Clear Screen finished";
-        wait for 1 us;
+        wait_gpu_ready;
+        report "Clear Screen Done";
 
-        -- Draw red rectangle
-        tb_reg_cmd   <= x"2";
-        tb_reg_x     <= to_unsigned(100, 10);
-        tb_reg_y     <= to_unsigned(100, 10);
-        tb_reg_w     <= to_unsigned(50, 10);
-        tb_reg_h     <= to_unsigned(50, 10);
-        tb_reg_color <= x"F00"; -- red
-        
-        wait until rising_edge(clk);
-        tb_reg_start <= '1';
-        wait until rising_edge(clk);
-        tb_reg_start <= '0';
+        -- Draw Yellow Rectangle
+        cpu_write(2, x"00320032"); -- X0=50, Y0=50
+        cpu_write(3, x"006400C8"); -- W=200, H=100
+        cpu_write(4, x"00000FF0"); -- Yellow
+        cpu_write_and_start(1, x"00000012"); -- CMD=1 (Rect), Start=Bit 4 -> 0x12
 
-        -- wait until busy, then until done
-        wait until tb_gpu_busy = '1';
-        wait until tb_gpu_busy = '0';
-        
-        report "Red Rectangle finished";
+        wait_gpu_ready;
+        report "Rectangle Done";
 
-        -- Draw line
-        tb_reg_cmd   <= x"3"; -- DRAW_LINE
-        tb_reg_x     <= to_unsigned(10, 10);  -- X0
-        tb_reg_y     <= to_unsigned(10, 10);  -- Y0
-        tb_reg_w     <= to_unsigned(600, 10); -- X1
-        tb_reg_h     <= to_unsigned(400, 10); -- Y1
-        tb_reg_color <= x"FFF"; -- White
-        
-        wait until rising_edge(clk); 
-        tb_reg_start <= '1';
-        wait until rising_edge(clk); 
-        tb_reg_start <= '0';
-        wait until tb_gpu_busy = '1';
-        wait until tb_gpu_busy = '0';
+        -- Draw white line
+        cpu_write(2, x"0190000A"); -- X0=10, Y0=400
+        cpu_write(3, x"00320258"); -- X1=600, Y1=50
+        cpu_write(4, x"00000FFF"); -- White
+        cpu_write_and_start(1, x"00000013"); -- CMD=3 (Line), Start=Bit 4 -> 0x13
 
-        report "first line finished";
+        wait_gpu_ready;
+        report "Line Done";
 
-        tb_reg_x     <= to_unsigned(300, 10);
-        tb_reg_y     <= to_unsigned(10, 10);
-        tb_reg_w     <= to_unsigned(350, 10);
-        tb_reg_h     <= to_unsigned(450, 10);
-        tb_reg_color <= x"0F0"; -- Green
-
-        wait until rising_edge(clk); 
-        tb_reg_start <= '1';
-        wait until rising_edge(clk); 
-        tb_reg_start <= '0';
-        wait until tb_gpu_busy = '1';
-        wait until tb_gpu_busy = '0';
-
-        report "second line finished";
-
-        wait until falling_edge(vsync);
-        wait until falling_edge(vsync);
-        
+        wait for 20 ms;
         sim_running <= false;
         wait;
     end process;
