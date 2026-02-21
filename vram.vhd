@@ -13,6 +13,7 @@ entity vram is
         we_a    : in  std_logic;
         addr_a  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
         din_a   : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+        dout_a  : out std_logic_vector(DATA_WIDTH-1 downto 0);
         -- Read from VRAM
         addr_b  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
         dout_b  : out std_logic_vector(DATA_WIDTH-1 downto 0)
@@ -23,17 +24,18 @@ architecture Behavioral of vram is
     type ram_type is array (0 to 307199) of std_logic_vector(DATA_WIDTH-1 downto 0);
     signal ram : ram_type := (others => (others => '0')); -- Initialise with black
 begin
-    -- Write to VRAM
+    -- Write/Read Port A
     process(clk)
     begin
         if rising_edge(clk) then
             if we_a = '1' then
                 ram(to_integer(unsigned(addr_a))) <= din_a;
             end if;
+            dout_a <= ram(to_integer(unsigned(addr_a)));
         end if;
     end process;
 
-    -- Read from VRAM
+    -- Read from VRAM Port B (for VGA)
     process(clk)
     variable addr_int : integer;
     begin
