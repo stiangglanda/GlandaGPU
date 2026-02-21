@@ -9,7 +9,7 @@ entity vram is
     );
     port (
         clk     : in  std_logic;
-        -- Write to VRAM
+        -- Read/Write to VRAM
         we_a    : in  std_logic;
         addr_a  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
         din_a   : in  std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -21,10 +21,17 @@ entity vram is
 end vram;
 
 architecture Behavioral of vram is
-    type ram_type is array (0 to 307199) of std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal ram : ram_type := (others => (others => '0')); -- Initialise with black
+    -- Use full address space for Block RAM inference (2^19 = 524,288)
+    type ram_type is array (0 to 2**ADDR_WIDTH - 1) of std_logic_vector(DATA_WIDTH-1 downto 0);
+    
+    -- Block RAM inference
+    signal ram : ram_type;
+    attribute ram_style : string;
+    attribute ram_style of ram : signal is "M10K"; -- Force block RAM (M10K for Cyclone V)
+
 begin
-    -- Write/Read Port A
+
+    -- Port A: Read/Write
     process(clk)
     begin
         if rising_edge(clk) then
@@ -35,17 +42,12 @@ begin
         end if;
     end process;
 
-    -- Read from VRAM Port B (for VGA)
+    -- Port B: Read Only
     process(clk)
-    variable addr_int : integer;
     begin
         if rising_edge(clk) then
-            addr_int := to_integer(unsigned(addr_b));
-            if addr_int < 307200 then
-                dout_b <= ram(addr_int);
-            else
-                dout_b <= (others => '0'); -- Out of bounds, return black
-            end if;
+            dout_b <= ram(to_integer(unsigned(addr_b)));
         end if;
     end process;
+
 end Behavioral;
