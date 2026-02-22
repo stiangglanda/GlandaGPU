@@ -21,32 +21,44 @@ entity vram is
 end vram;
 
 architecture Behavioral of vram is
-    -- Use full address space for Block RAM inference (2^19 = 524,288)
-    type ram_type is array (0 to 2**ADDR_WIDTH - 1) of std_logic_vector(DATA_WIDTH-1 downto 0);
+    constant RAM_DEPTH : integer := 307200; -- 640x480
+    type ram_type is array (0 to RAM_DEPTH - 1) of std_logic_vector(DATA_WIDTH-1 downto 0);
     
     -- Block RAM inference
     signal ram : ram_type;
-    attribute ram_style : string;
-    attribute ram_style of ram : signal is "M10K"; -- Force block RAM (M10K for Cyclone V)
+    attribute ramstyle : string;
+    attribute ramstyle of ram : signal is "M10K, no_rw_check"; -- Force block RAM (M10K for Cyclone V)
 
 begin
 
     -- Port A: Read/Write
     process(clk)
+        variable addr_a_int : integer;
     begin
         if rising_edge(clk) then
-            if we_a = '1' then
-                ram(to_integer(unsigned(addr_a))) <= din_a;
+            addr_a_int := to_integer(unsigned(addr_a));
+            if addr_a_int >= RAM_DEPTH then
+                addr_a_int := 0;
             end if;
-            dout_a <= ram(to_integer(unsigned(addr_a)));
+            
+            if we_a = '1' then
+                ram(addr_a_int) <= din_a;
+            end if;
+            dout_a <= ram(addr_a_int);
         end if;
     end process;
 
     -- Port B: Read Only
     process(clk)
+        variable addr_b_int : integer;
     begin
         if rising_edge(clk) then
-            dout_b <= ram(to_integer(unsigned(addr_b)));
+            addr_b_int := to_integer(unsigned(addr_b));
+            if addr_b_int >= RAM_DEPTH then
+                addr_b_int := 0;
+            end if;
+            
+            dout_b <= ram(addr_b_int);
         end if;
     end process;
 
