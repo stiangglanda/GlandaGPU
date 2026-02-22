@@ -54,3 +54,44 @@ The GPU currently consists of a **VGA Controller** that generates HSYNC/VSYNC si
 ## Interrupts
 - `IRQ_VSYNC`: Fires at the start of vertical blanking
 - `IRQ_IDLE`: Fires when the Command Engine finishes drawing
+
+```mermaid
+graph LR
+    %% External Entities
+    CPU[CPU / AXI Master]
+    Monitor[VGA Display]
+
+    subgraph AXI_GPU_Wrapper [axi_gpu_wrapper.vhd]
+        direction LR
+        
+        subgraph Top_GPU [top_gpu.vhd]
+            direction TB
+            
+            BusMux{Address Decoder<br>& Multiplexer}
+            
+            REGS[gpu_regs.vhd<br>Control, Config & IRQ]
+            ENGINE[gpu_engine.vhd<br>2D Hardware Accelerator]
+            VRAM[(vram.vhd<br>Dual-Port Memory)]
+            VGA[vga_controller.vhd<br>Timing & Video Out]
+            
+            %% Internal Connections
+            BusMux -- "Register Access<br>(Addr bit 21 = 1)" --> REGS
+            BusMux -- "Direct CPU VRAM Write<br>(Addr bit 21 = 0)" --> VRAM
+            
+            REGS -- "Draw Commands & Start<br>(Line, Rect, Clear)" --> ENGINE
+            ENGINE -- "Accelerated Pixel Writes<br>(Takes control if busy)" --> VRAM
+            ENGINE -. "Busy Signal" .-> REGS
+            
+            VGA -- "Read Address<br>(Port B)" --> VRAM
+            VRAM -- "Pixel Data<br>(Port B)" --> VGA
+            
+            VGA -. "VSync Event" .-> REGS
+        end
+    end
+
+    %% External Connections
+    CPU <==>|AXI4-Lite Bus| AXI_GPU_Wrapper
+    AXI_GPU_Wrapper <==>|Custom Internal Bus| BusMux
+    REGS -. "Hardware IRQ" .-> CPU
+    VGA ===>|RGB, HSync, VSync| Monitor
+```
