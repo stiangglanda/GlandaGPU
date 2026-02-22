@@ -11,6 +11,7 @@ This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal g
 
 ## Architecture
 The GPU currently consists of a **VGA Controller** that generates HSYNC/VSYNC signals and displays a test pattern.
+![GlandaGPUArch](GlandaGPUArch.svg)
 
 ## The First Generated Frame of the GPU
 <img width="640" height="480" alt="vga_output" src="https://github.com/user-attachments/assets/7aa8341c-4a18-4a21-8b9a-545c005ddf8e" />
