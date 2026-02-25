@@ -7,7 +7,7 @@ This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal g
 | :--- | :--- | :--- |
 | **Resolution** | 640 x 480 | Industry standard VGA |
 | **Refresh Rate**| 60 Hz | 25.175 MHz Pixel Clock |
-| **Color Depth** | 12-bit (4-4-4) | Stored as 32-bit words (0x...0RGB) |
+| **Color Depth** | 12-bit (4-4-4) | Physically stored as 12-bit and Accessed as 32-bit words via AXI |
 
 ## Architecture
 
