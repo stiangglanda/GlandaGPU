@@ -1,4 +1,4 @@
-# GlandaGPU v0.2
+# GlandaGPU v0.3
 
 This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal generation and provides hardware acceleration for basic geometric primitives.
 
