@@ -16,11 +16,12 @@ architecture sim of tb_vga is
     signal green   : std_logic_vector(3 downto 0);
     signal blue    : std_logic_vector(3 downto 0);
 
-    signal tb_bus_addr   : std_logic_vector(31 downto 0);
-    signal tb_bus_we     : std_logic;
-    signal tb_bus_din    : std_logic_vector(31 downto 0);
-    signal tb_bus_dout   : std_logic_vector(31 downto 0);
-    signal tb_bus_wait   : std_logic;
+    signal tb_avs_address   : std_logic_vector(31 downto 0);
+    signal tb_avs_write     : std_logic;
+    signal tb_avs_writedata    : std_logic_vector(31 downto 0);
+    signal tb_avs_read      : std_logic := '0';
+    signal tb_avs_readdata   : std_logic_vector(31 downto 0);
+    signal tb_avs_waitrequest   : std_logic;
 
     signal tb_irq : std_logic;
     
@@ -34,11 +35,12 @@ begin
         port map (
             clk   => clk,
             reset   => reset,
-            bus_addr => tb_bus_addr,
-            bus_we => tb_bus_we,
-            bus_din => tb_bus_din,
-            bus_dout => tb_bus_dout,
-            bus_wait => tb_bus_wait,
+            avs_address => tb_avs_address,
+            avs_write => tb_avs_write,
+            avs_writedata => tb_avs_writedata,
+            avs_read => tb_avs_read,
+            avs_readdata => tb_avs_readdata,
+            avs_waitrequest => tb_avs_waitrequest,
             hsync => hsync,
             vsync => vsync,
             video_on => video_on,
@@ -66,23 +68,23 @@ begin
         begin
             wait until rising_edge(clk);
             -- Add 0x200000 (Bit 21) for Register Access, Shift index to byte address
-            tb_bus_addr <= std_logic_vector(shift_left(to_unsigned(addr, 32), 2) or x"00200000"); 
-            tb_bus_din  <= data;
-            tb_bus_we   <= '1';
+            tb_avs_address <= std_logic_vector(shift_left(to_unsigned(addr, 32), 2) or x"00200000"); 
+            tb_avs_writedata  <= data;
+            tb_avs_write   <= '1';
             wait until rising_edge(clk);
-            tb_bus_we   <= '0';
-            tb_bus_din  <= (others => '0');
+            tb_avs_write   <= '0';
+            tb_avs_writedata  <= (others => '0');
         end procedure;
 
         procedure cpu_write_and_start(addr : in integer; data : in std_logic_vector(31 downto 0)) is
         begin
             wait until rising_edge(clk);
              -- Add 0x200000 (Bit 21) for Register Access
-            tb_bus_addr <= std_logic_vector(shift_left(to_unsigned(addr, 32), 2) or x"00200000");
-            tb_bus_din  <= data;
-            tb_bus_we   <= '1';
+            tb_avs_address <= std_logic_vector(shift_left(to_unsigned(addr, 32), 2) or x"00200000");
+            tb_avs_writedata  <= data;
+            tb_avs_write   <= '1';
             wait until rising_edge(clk);
-            tb_bus_we   <= '0';
+            tb_avs_write   <= '0';
         
             -- shouldent be necessary anymore, but just to be safe
             for i in 1 to 5 loop
@@ -90,21 +92,25 @@ begin
             end loop;
             
             loop
-                tb_bus_addr <= x"00200000"; -- Status Rigster + Offset
+                tb_avs_address <= x"00200000"; -- Status Rigster + Offset
+                tb_avs_read <= '1';
                 wait until rising_edge(clk);
-                exit when tb_bus_dout(0) = '0';
+                exit when tb_avs_readdata(0) = '0';
             end loop;
+            tb_avs_read <= '0';
         end procedure;
 
         -- Wait until Busy=0
         procedure wait_gpu_ready is
         begin
             loop
-                tb_bus_addr <= x"00200000"; 
+                tb_avs_address <= x"00200000";
+                tb_avs_read <= '1';
                 wait until rising_edge(clk);
                 -- Bit 0(Busy)
-                exit when tb_bus_dout(0) = '0';
+                exit when tb_avs_readdata(0) = '0';
             end loop;
+            tb_avs_read <= '0';
         end procedure;
 
         procedure wait_and_clear_irq is
@@ -120,29 +126,32 @@ begin
 
             loop
                 wait until rising_edge(clk);
-                tb_bus_addr <= x"00200014"; -- ISR Address + Offset (Reg 5 * 4 = 20 = 0x14)
-                tb_bus_we   <= '0';
+                tb_avs_address <= x"00200014"; -- ISR Address + Offset (Reg 5 * 4 = 20 = 0x14)
+                tb_avs_write   <= '0';
+                tb_avs_read    <= '1';
                 
                 wait until rising_edge(clk);
                 wait for 1 ns;
                 
-                isr_val := tb_bus_dout;
+                isr_val := tb_avs_readdata;
                 
                 if unsigned(isr_val) /= 0 then
+                    tb_avs_read    <= '0';
                     exit;
                 end if;
             end loop;
+            tb_avs_read    <= '0';
 
             report "Interrupt received. ISR Value: " & integer'image(to_integer(unsigned(isr_val)));
 
             -- W1C to acknwoledge the interrupt
             wait until rising_edge(clk);
-            tb_bus_we   <= '1';
-            tb_bus_din  <= isr_val;
+            tb_avs_write   <= '1';
+            tb_avs_writedata  <= isr_val;
             
             wait until rising_edge(clk);
-            tb_bus_we   <= '0';
-            tb_bus_din  <= (others => '0');
+            tb_avs_write   <= '0';
+            tb_avs_writedata  <= (others => '0');
             
             wait until tb_irq = '0';
         end procedure;
@@ -150,33 +159,35 @@ begin
         procedure vram_write(offset : in integer; color : in std_logic_vector(11 downto 0)) is
         begin
             wait until rising_edge(clk);
-            tb_bus_addr <= std_logic_vector(to_unsigned(offset, 32)); -- Direct VRAM mapping
-            tb_bus_din  <= x"00000" & color;
-            tb_bus_we   <= '1';
+            tb_avs_address <= std_logic_vector(to_unsigned(offset, 32)); -- Direct VRAM mapping
+            tb_avs_writedata  <= x"00000" & color;
+            tb_avs_write   <= '1';
             
             loop
                 wait until rising_edge(clk);
-                exit when tb_bus_wait = '0'; 
+                exit when tb_avs_waitrequest = '0'; 
             end loop;
 
-            tb_bus_we   <= '0';
-            tb_bus_din  <= (others => '0');
+            tb_avs_write   <= '0';
+            tb_avs_writedata  <= (others => '0');
         end procedure;
 
         procedure vram_check(offset : in integer; expected : in std_logic_vector(11 downto 0)) is
             variable read_val : std_logic_vector(31 downto 0);
         begin
             wait until rising_edge(clk);
-            tb_bus_addr <= std_logic_vector(to_unsigned(offset, 32));
-            tb_bus_we   <= '0';
+            tb_avs_address <= std_logic_vector(to_unsigned(offset, 32));
+            tb_avs_write   <= '0';
+            tb_avs_read    <= '1';
             
             loop
                 wait until rising_edge(clk);
-                exit when tb_bus_wait = '0';
+                exit when tb_avs_waitrequest = '0';
             end loop;
             
             wait until rising_edge(clk); 
-            read_val := tb_bus_dout;
+            read_val := tb_avs_readdata;
+            tb_avs_read <= '0';
             
             if read_val(11 downto 0) /= expected then
                 report "VRAM Mismatch at " & integer'image(offset) & 

@@ -7,12 +7,13 @@ entity top_gpu is
         clk   : in std_logic;
         reset : in std_logic;
 
-        -- Bus Interface
-        bus_addr   : in std_logic_vector(31 downto 0);
-        bus_we     : in std_logic;
-        bus_din    : in std_logic_vector(31 downto 0);
-        bus_dout   : out std_logic_vector(31 downto 0);
-        bus_wait   : out std_logic;
+        -- Avalon-MM Interface
+        avs_address     : in std_logic_vector(31 downto 0);
+        avs_write       : in std_logic;
+        avs_writedata   : in std_logic_vector(31 downto 0);
+        avs_read        : in std_logic;
+        avs_readdata    : out std_logic_vector(31 downto 0);
+        avs_waitrequest : out std_logic;
 
         -- VGA Interface
         hsync : out std_logic;
@@ -63,24 +64,24 @@ architecture Structural of top_gpu is
     signal video_on_internal : std_logic;
 begin    
     -- dicide if access is for VRAM or Registers (bit 21 = 0 for VRAM, 1 for Registers)
-    reg_cs <= bus_addr(21);
+    reg_cs <= avs_address(21);
 
     -- Write Enable for Registers
-    bus_we_reg <= bus_we when (reg_cs = '1') else '0';
+    bus_we_reg <= avs_write when (reg_cs = '1') else '0';
     
     -- Write Enable for VRAM
-    cpu_we_vram <= bus_we when (reg_cs = '0' and gpu_busy = '0') else '0'; 
+    cpu_we_vram <= avs_write when (reg_cs = '0' and gpu_busy = '0') else '0'; 
 
     -- Convert Byte Address (CPU) to Word/Pixel Index (VRAM)
     -- Shift right by 2 (divide by 4) effectively ignores the byte-offset bits (1 downto 0).
     -- Example: 0x00->0, 0x04->1, 0x08->2
-    cpu_addr_vram <= bus_addr(20 downto 2); -- 19 bits
+    cpu_addr_vram <= avs_address(20 downto 2); -- 19 bits
     
     -- pixel data for writing to VRAM
-    cpu_din_vram  <= bus_din(11 downto 0); 
+    cpu_din_vram  <= avs_writedata(11 downto 0); 
     
     -- wait If GPU is busy and CPU tries to access VRAM
-    bus_wait <= '1' when (reg_cs = '0' and gpu_busy = '1') else '0';
+    avs_waitrequest <= '1' when (reg_cs = '0' and gpu_busy = '1') else '0';
     
     -- If GPU is busy, it has control over VRAM Port A, otherwise CPU can access it
     mux_we_a   <= gpu_we   when gpu_busy = '1' else cpu_we_vram;
@@ -88,8 +89,8 @@ begin
     mux_din_a  <= gpu_din  when gpu_busy = '1' else cpu_din_vram;
 
     -- Output data from either GPU registers or VRAM depending on the access type
-    bus_dout <= reg_dout when reg_cs = '1' else 
-                (31 downto 12 => '0') & vram_dout_cpu; -- vram_dout_cpu = pixrl data
+    avs_readdata <= reg_dout when (reg_cs = '1' and avs_read = '1') else 
+                    (31 downto 12 => '0') & vram_dout_cpu; -- vram_dout_cpu = pixrl data
 
     -- VRAM Instanz
     vram_inst : entity work.vram
@@ -108,9 +109,9 @@ begin
         port map (
             clk       => clk,
             reset     => reset,
-            bus_addr  => bus_addr(5 downto 2), -- 4 bit (shift same as for cpu_addr_vram))
+            bus_addr  => avs_address(5 downto 2), -- 4 bit (shift same as for cpu_addr_vram))
             bus_we    => bus_we_reg,
-            bus_din   => bus_din,
+            bus_din   => avs_writedata,
             bus_dout  => reg_dout,
             gpu_x0    => reg_x,
             gpu_y0    => reg_y,
