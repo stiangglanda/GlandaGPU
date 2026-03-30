@@ -1,6 +1,20 @@
-# GlandaGPU v0.2
+# GlandaGPU v0.3
 
 This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal generation and provides hardware acceleration for basic geometric primitives.
+
+## Software & Ecosystem
+
+The GlandaGPU project also includes software components used for development and testing:
+
+### Linux Device Driver  
+A fork of the Linux kernel containing the GlandaGPU platform / DRM driver implementation.  
+[Linux Device Driver](https://github.com/stiangglanda/linux/tree/master/drivers/gpu/drm/glandagpu)
+
+### QEMU Device Model  
+  A fork of QEMU implementing a virtual GlandaGPU device. This allows the driver to be developed and tested without FPGA hardware.  
+  [qemu-glandagpu](https://github.com/stiangglanda/qemu-glandagpu/blob/master/hw/display/glandagpu.c)
+
+The QEMU device model acts as a **software twin of the hardware**, enabling rapid driver development and debugging in a fully virtualized environment.
 
 ## Hardware Parameters
 | Parameter | Value | Description |
@@ -73,7 +87,9 @@ The hardware design (VHDL) for the VGA controller and the 2D acceleration engine
 
 The immediate next step is **writing a Linux device driver**. To facilitate this without requiring physical hardware for every iteration, the plan includes:
 
-1.  **Simple Linux Driver:** Create a basic platform driver to map memory and verify register access.
-2.  **QEMU Device Model:** Implement a software emulation of the GlandaGPU in QEMU to test the driver in a virtual environment.
-3.  **DRM/KMS Driver:** Expand the driver to support the Linux Direct Rendering Manager (DRM) subsystem.
-4.  **FPGA Verification:** Validate the VHDL and driver on physical FPGA hardware (currently only simulated).
+- [ ] **Simple Linux Driver:** Create a basic platform driver to map memory and verify register access.
+- [ ] **QEMU Device Model:** Implement a software emulation of the GlandaGPU in QEMU to test the driver in a virtual environment.
+- [ ] **DRM/KMS Driver:** Expand the driver to support the Linux Direct Rendering Manager (DRM) subsystem.
+- [ ] **FPGA Verification:** Validate the VHDL and driver on physical FPGA hardware (currently only simulated).
+
+
