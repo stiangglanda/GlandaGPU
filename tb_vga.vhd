@@ -16,7 +16,7 @@ architecture sim of tb_vga is
     signal green   : std_logic_vector(3 downto 0);
     signal blue    : std_logic_vector(3 downto 0);
 
-    signal tb_avs_address   : std_logic_vector(31 downto 0);
+    signal tb_avs_address   : std_logic_vector(21 downto 0);
     signal tb_avs_write     : std_logic;
     signal tb_avs_writedata    : std_logic_vector(31 downto 0);
     signal tb_avs_read      : std_logic := '0';
@@ -67,8 +67,8 @@ begin
         procedure cpu_write(addr : in integer; data : in std_logic_vector(31 downto 0)) is
         begin
             wait until rising_edge(clk);
-            -- Add 0x200000 (Bit 21) for Register Access, Shift index to byte address
-            tb_avs_address <= std_logic_vector(shift_left(to_unsigned(addr, 32), 2) or x"00200000"); 
+            -- Add Bit 21 for Register Access, Shift index to address
+            tb_avs_address <= std_logic_vector(resize(shift_left(to_unsigned(addr, 22), 2) or "10" & x"00000", 22)); 
             tb_avs_writedata  <= data;
             tb_avs_write   <= '1';
             wait until rising_edge(clk);
@@ -79,8 +79,8 @@ begin
         procedure cpu_write_and_start(addr : in integer; data : in std_logic_vector(31 downto 0)) is
         begin
             wait until rising_edge(clk);
-             -- Add 0x200000 (Bit 21) for Register Access
-            tb_avs_address <= std_logic_vector(shift_left(to_unsigned(addr, 32), 2) or x"00200000");
+             -- Add Bit 21 for Register Access
+            tb_avs_address <= std_logic_vector(resize(shift_left(to_unsigned(addr, 22), 2) or "10" & x"00000", 22));
             tb_avs_writedata  <= data;
             tb_avs_write   <= '1';
             wait until rising_edge(clk);
@@ -92,7 +92,7 @@ begin
             end loop;
             
             loop
-                tb_avs_address <= x"00200000"; -- Status Rigster + Offset
+                tb_avs_address <= "10" & x"00000"; -- Status Rigster + Offset
                 tb_avs_read <= '1';
                 wait until rising_edge(clk);
                 exit when tb_avs_readdata(0) = '0';
@@ -104,7 +104,7 @@ begin
         procedure wait_gpu_ready is
         begin
             loop
-                tb_avs_address <= x"00200000";
+                tb_avs_address <= "10" & x"00000";
                 tb_avs_read <= '1';
                 wait until rising_edge(clk);
                 -- Bit 0(Busy)
@@ -126,7 +126,7 @@ begin
 
             loop
                 wait until rising_edge(clk);
-                tb_avs_address <= x"00200014"; -- ISR Address + Offset (Reg 5 * 4 = 20 = 0x14)
+                tb_avs_address <= "10" & x"00014"; -- ISR Address + Offset (Reg 5 * 4 = 20 = 0x14)
                 tb_avs_write   <= '0';
                 tb_avs_read    <= '1';
                 
@@ -159,7 +159,7 @@ begin
         procedure vram_write(offset : in integer; color : in std_logic_vector(11 downto 0)) is
         begin
             wait until rising_edge(clk);
-            tb_avs_address <= std_logic_vector(to_unsigned(offset, 32)); -- Direct VRAM mapping
+            tb_avs_address <= std_logic_vector(to_unsigned(offset, 22)); -- Direct VRAM mapping
             tb_avs_writedata  <= x"00000" & color;
             tb_avs_write   <= '1';
             
@@ -176,7 +176,7 @@ begin
             variable read_val : std_logic_vector(31 downto 0);
         begin
             wait until rising_edge(clk);
-            tb_avs_address <= std_logic_vector(to_unsigned(offset, 32));
+            tb_avs_address <= std_logic_vector(to_unsigned(offset, 22));
             tb_avs_write   <= '0';
             tb_avs_read    <= '1';
             

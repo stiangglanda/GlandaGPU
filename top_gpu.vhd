@@ -8,7 +8,7 @@ entity top_gpu is
         reset : in std_logic;
 
         -- Avalon-MM Interface
-        avs_address     : in std_logic_vector(31 downto 0);
+        avs_address     : in std_logic_vector(21 downto 0);
         avs_write       : in std_logic;
         avs_writedata   : in std_logic_vector(31 downto 0);
         avs_read        : in std_logic;
