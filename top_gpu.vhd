@@ -62,7 +62,10 @@ architecture Structural of top_gpu is
     signal vsync_internal : std_logic;
     signal hsync_internal : std_logic;
     signal video_on_internal : std_logic;
-begin    
+    signal reset_active_high : std_logic;
+begin
+    reset_active_high <= not reset; 
+
     -- dicide if access is for VRAM or Registers (bit 21 = 0 for VRAM, 1 for Registers)
     reg_cs <= avs_address(21);
 
@@ -107,7 +110,7 @@ begin
     gpu_regs_inst : entity work.gpu_regs
         port map (
             clk       => clk,
-            reset     => reset,
+            reset     => reset_active_high,
             bus_addr  => avs_address(5 downto 2), -- 4 bit (shift same as for cpu_addr_vram))
             bus_we    => bus_we_reg,
             bus_din   => avs_writedata,
@@ -128,7 +131,7 @@ begin
     engine_inst : entity work.gpu_engine
         port map (
             clk       => clk,
-            reset     => reset,
+            reset     => reset_active_high,
             reg_cmd   => reg_cmd,
             reg_x     => reg_x,
             reg_y     => reg_y,
@@ -146,7 +149,7 @@ begin
     vga_inst : entity work.vga_controller
         port map (
             clk        => clk,
-            reset      => reset,
+            reset      => reset_active_high,
             pixel_data => vram_data_vga,
             pixel_addr => vram_addr_vga,
             hsync      => hsync_internal,
