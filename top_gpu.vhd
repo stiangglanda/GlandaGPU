@@ -82,8 +82,10 @@ begin
     cpu_din_vram  <= avs_writedata(11 downto 0); 
     
     -- wait If GPU is busy and CPU tries to access VRAM
-    avs_waitrequest <= '1' when (reg_cs = '0' and gpu_busy = '1') else '0';
-    
+    -- avs_waitrequest <= '1' when (reg_cs = '0' and gpu_busy = '1') else '0';
+    avs_waitrequest <= '1' when (reg_cs = '0' and gpu_busy = '1' and (avs_read = '1' or avs_write = '1')) else '0';
+
+
     -- If GPU is busy, it has control over VRAM Port A, otherwise CPU can access it
     mux_we_a   <= gpu_we   when gpu_busy = '1' else cpu_we_vram;
     mux_addr_a <= gpu_addr when gpu_busy = '1' else cpu_addr_vram;
