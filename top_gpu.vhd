@@ -92,9 +92,11 @@ begin
     mux_addr_a <= gpu_addr when gpu_busy = '1' else cpu_addr_vram;
     mux_din_a  <= gpu_din  when gpu_busy = '1' else cpu_din_vram;
 
+    avs_readdata <= x"DEADBEEF" when (reg_cs = '1') else (others => '0');
+
     -- Output data from either GPU registers or VRAM depending on the access type
-    avs_readdata <= reg_dout when (reg_cs = '1' and avs_read = '1') else 
-                    (31 downto 12 => '0') & vram_dout_cpu; -- vram_dout_cpu = pixrl data
+    --avs_readdata <= reg_dout when (reg_cs = '1' and avs_read = '1') else 
+    --                (31 downto 12 => '0') & vram_dout_cpu; -- vram_dout_cpu = pixrl data
 
     -- VRAM Instanz
     vram_inst : entity work.vram
