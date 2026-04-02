@@ -93,9 +93,16 @@ begin
     mux_din_a  <= gpu_din  when gpu_busy = '1' else cpu_din_vram;
 
     -- avs_readdata <= x"DEADBEEF" when (reg_cs = '1') else (others => '0');
-    avs_readdata <= x"DEADBEEF" when (reg_cs = '1') else  -- Register-Test
-                vram_dout_cpu when (reg_cs = '0') else  -- VRAM-Daten für CPU
-                (others => '0');
+    process(reg_cs, vram_dout_cpu)
+    begin
+        avs_readdata <= (others => '0'); -- Default alles auf 0
+        if reg_cs = '1' then
+            avs_readdata <= x"DEADBEEF";
+        else
+            -- Wir nehmen vram_dout_cpu und setzen es in die unteren Bits
+            avs_readdata(vram_dout_cpu'range) <= vram_dout_cpu;
+        end if;
+    end process;
 
     -- Output data from either GPU registers or VRAM depending on the access type
     --avs_readdata <= reg_dout when (reg_cs = '1' and avs_read = '1') else 
