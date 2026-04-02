@@ -8,7 +8,7 @@ end tb_vga;
 
 architecture sim of tb_vga is
     signal clk     : std_logic := '0';
-	signal reset   : std_logic := '1';
+	signal reset   : std_logic := '0';
     signal hsync   : std_logic;
     signal vsync   : std_logic;
 	signal video_on: std_logic;
@@ -199,9 +199,9 @@ begin
             end if;
         end procedure;
     begin
-        reset <= '0';
-        wait for 100 ns;
         reset <= '1';
+        wait for 100 ns;
+        reset <= '0';
         wait for 100 ns;
 
         report "Starting GPU";
