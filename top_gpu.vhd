@@ -92,14 +92,14 @@ begin
     mux_addr_a <= gpu_addr when gpu_busy = '1' else cpu_addr_vram;
     mux_din_a  <= gpu_din  when gpu_busy = '1' else cpu_din_vram;
 
-    -- avs_readdata <= x"DEADBEEF" when (reg_cs = '1') else (others => '0');
-    process(reg_cs, vram_dout_cpu)
+    process(reg_cs, reg_dout, vram_dout_cpu)
     begin
-        avs_readdata <= (others => '0'); -- Default alles auf 0
         if reg_cs = '1' then
-            avs_readdata <= x"DEADBEEF";
+            -- Wir geben die echten Registerinhalte der GPU-Engine zurück
+            avs_readdata <= reg_dout; 
         else
-            -- Wir nehmen vram_dout_cpu und setzen es in die unteren Bits
+            -- Wir geben die VRAM-Daten zurück (mit 32-Bit Auffüllung)
+            avs_readdata <= (others => '0');
             avs_readdata(vram_dout_cpu'range) <= vram_dout_cpu;
         end if;
     end process;
