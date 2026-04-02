@@ -94,7 +94,7 @@ begin
 
     -- avs_readdata <= x"DEADBEEF" when (reg_cs = '1') else (others => '0');
     avs_readdata <= x"DEADBEEF" when (reg_cs = '1') else  -- Register-Test
-                cpu_dout_vram when (reg_cs = '0') else  -- VRAM-Daten für CPU
+                vram_dout_cpu when (reg_cs = '0') else  -- VRAM-Daten für CPU
                 (others => '0');
 
     -- Output data from either GPU registers or VRAM depending on the access type
