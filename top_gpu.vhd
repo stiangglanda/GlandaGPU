@@ -62,12 +62,10 @@ architecture Structural of top_gpu is
     signal vsync_internal : std_logic;
     signal hsync_internal : std_logic;
     signal video_on_internal : std_logic;
-    signal reset_active_high : std_logic;
-begin
-    reset_active_high <= not reset; 
-
+begin    
     -- dicide if access is for VRAM or Registers (bit 21 = 0 for VRAM, 1 for Registers)
-    reg_cs <= avs_address(21);
+    -- reg_cs <= avs_address(21);
+    reg_cs <= avs_address(19); -- 0x00200000 (Byte) = 0x080000 (Word) -> Bit 19!
 
     -- Write Enable for Registers
     bus_we_reg <= avs_write when (reg_cs = '1') else '0';
@@ -78,12 +76,13 @@ begin
     -- Convert Byte Address (CPU) to Word/Pixel Index (VRAM)
     -- Shift right by 2 (divide by 4) effectively ignores the byte-offset bits (1 downto 0).
     -- Example: 0x00->0, 0x04->1, 0x08->2
-    cpu_addr_vram <= avs_address(20 downto 2); -- 19 bits
+    cpu_addr_vram <= avs_address(18 downto 0); -- 19 bits
     
     -- pixel data for writing to VRAM
     cpu_din_vram  <= avs_writedata(11 downto 0); 
     
-    avs_waitrequest <= '0'; -- test no wait the console doesnt freeze
+    -- wait If GPU is busy and CPU tries to access VRAM
+    avs_waitrequest <= '1' when (reg_cs = '0' and gpu_busy = '1') else '0';
     
     -- If GPU is busy, it has control over VRAM Port A, otherwise CPU can access it
     mux_we_a   <= gpu_we   when gpu_busy = '1' else cpu_we_vram;
@@ -110,8 +109,8 @@ begin
     gpu_regs_inst : entity work.gpu_regs
         port map (
             clk       => clk,
-            reset     => reset_active_high,
-            bus_addr  => avs_address(5 downto 2), -- 4 bit (shift same as for cpu_addr_vram))
+            reset     => reset,
+            bus_addr  => avs_address(3 downto 0), -- 4 bit (shift same as for cpu_addr_vram))
             bus_we    => bus_we_reg,
             bus_din   => avs_writedata,
             bus_dout  => reg_dout,
@@ -131,7 +130,7 @@ begin
     engine_inst : entity work.gpu_engine
         port map (
             clk       => clk,
-            reset     => reset_active_high,
+            reset     => reset,
             reg_cmd   => reg_cmd,
             reg_x     => reg_x,
             reg_y     => reg_y,
@@ -149,7 +148,7 @@ begin
     vga_inst : entity work.vga_controller
         port map (
             clk        => clk,
-            reset      => reset_active_high,
+            reset      => reset,
             pixel_data => vram_data_vga,
             pixel_addr => vram_addr_vga,
             hsync      => hsync_internal,
