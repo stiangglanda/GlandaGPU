@@ -5,6 +5,8 @@ This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal g
 <p align="center">
   <a href="https://www.youtube.com/watch?v=9Oxhgr2rtWc">
     <img src="https://img.youtube.com/vi/9Oxhgr2rtWc/maxresdefault.jpg" width="600">
+    <br>
+    ▶ Watch Video
   </a>
 </p>
 
