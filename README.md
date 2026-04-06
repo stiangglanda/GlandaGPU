@@ -1,6 +1,12 @@
-# GlandaGPU v0.4
+# GlandaGPU v0.5
 
 This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal generation and provides hardware acceleration for basic geometric primitives.
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=9Oxhgr2rtWc">
+    <img src="https://img.youtube.com/vi/9Oxhgr2rtWc/maxresdefault.jpg" width="600">
+  </a>
+</p>
 
 ## Software & Ecosystem
 
@@ -87,9 +93,9 @@ The hardware design (VHDL) for the VGA controller and the 2D acceleration engine
 
 The immediate next step is **writing a Linux device driver**. To facilitate this without requiring physical hardware for every iteration, the plan includes:
 
-- [ ] **Simple Linux Driver:** Create a basic platform driver to map memory and verify register access.
-- [ ] **QEMU Device Model:** Implement a software emulation of the GlandaGPU in QEMU to test the driver in a virtual environment.
+- [x] **Simple Linux Driver:** Create a basic platform driver to map memory and verify register access.
+- [x] **QEMU Device Model:** Implement a software emulation of the GlandaGPU in QEMU to test the driver in a virtual environment.
 - [ ] **DRM/KMS Driver:** Expand the driver to support the Linux Direct Rendering Manager (DRM) subsystem.
-- [ ] **FPGA Verification:** Validate the VHDL and driver on physical FPGA hardware (currently only simulated).
+- [x] **FPGA Verification:** Validate the VHDL and driver on physical FPGA hardware (currently only simulated).
 
 
