@@ -240,17 +240,17 @@ begin
         report "Line Done";
 
         report "Testing VRAM Access";
-        -- Red Pixel at (0,0) -> Offset 0
+        -- Red Pixel at (0,0)
         vram_write(0, x"F00");
-        -- Green Pixel at (1,0) -> Offset 4
-        vram_write(4, x"0F0");
-        -- Blue Pixel at (2,0) -> Offset 8
-        vram_write(8, x"00F");
+        -- Green Pixel at (1,0)
+        vram_write(1, x"0F0");
+        -- Blue Pixel at (2,0)
+        vram_write(2, x"00F");
         
         -- Read Back
         vram_check(0, x"F00");
-        vram_check(4, x"0F0");
-        vram_check(8, x"00F");
+        vram_check(1, x"0F0");
+        vram_check(2, x"00F");
         report "VRAM Access Done";
 
         wait for 20 ms;
