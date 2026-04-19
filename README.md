@@ -87,7 +87,7 @@ graph LR
 
 ## Documentation
 
-For detailed register maps, memory layouts, and programming guidelines, please refer to the [Hardware Specification](Hardware_Specification.md).
+For detailed register maps, memory layouts, and programming guidelines, please refer to the [Hardware Specification](doc/Hardware_Specification.md).
 
 ## Roadmap & Next Steps
 
