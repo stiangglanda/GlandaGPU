@@ -9,7 +9,6 @@ hc_output/
 # Simulation files (ModelSim / Questa)
 simulation/
 work/
-modelsim.ini
 transcript
 *.wlf
 *.vstf
@@ -24,9 +23,6 @@ transcript
 *.log
 *.rpt
 *.summary
-
-# Project output / Generated images
-vga_output.ppm
 
 # OS specific
 .DS_Store

@@ -67,8 +67,8 @@ begin
         procedure cpu_write(addr : in integer; data : in std_logic_vector(31 downto 0)) is
         begin
             wait until rising_edge(clk);
-            -- Add Bit 21 for Register Access, Shift index to address
-            tb_avs_address <= std_logic_vector(resize(shift_left(to_unsigned(addr, 22), 2) or "10" & x"00000", 22)); 
+            -- Add Bit 19 for Register Access, map address directly
+            tb_avs_address <= std_logic_vector(resize(to_unsigned(addr, 22) or "00" & x"80000", 22)); 
             tb_avs_writedata  <= data;
             tb_avs_write   <= '1';
             wait until rising_edge(clk);
@@ -79,8 +79,8 @@ begin
         procedure cpu_write_and_start(addr : in integer; data : in std_logic_vector(31 downto 0)) is
         begin
             wait until rising_edge(clk);
-             -- Add Bit 21 for Register Access
-            tb_avs_address <= std_logic_vector(resize(shift_left(to_unsigned(addr, 22), 2) or "10" & x"00000", 22));
+             -- Add Bit 19 for Register Access
+            tb_avs_address <= std_logic_vector(resize(to_unsigned(addr, 22) or "00" & x"80000", 22));
             tb_avs_writedata  <= data;
             tb_avs_write   <= '1';
             wait until rising_edge(clk);
@@ -92,7 +92,7 @@ begin
             end loop;
             
             loop
-                tb_avs_address <= "10" & x"00000"; -- Status Rigster + Offset
+                tb_avs_address <= "00" & x"80000"; -- Status Rigster + Offset
                 tb_avs_read <= '1';
                 wait until rising_edge(clk);
                 exit when tb_avs_readdata(0) = '0';
@@ -104,7 +104,7 @@ begin
         procedure wait_gpu_ready is
         begin
             loop
-                tb_avs_address <= "10" & x"00000";
+                tb_avs_address <= "00" & x"80000";
                 tb_avs_read <= '1';
                 wait until rising_edge(clk);
                 -- Bit 0(Busy)
@@ -126,7 +126,7 @@ begin
 
             loop
                 wait until rising_edge(clk);
-                tb_avs_address <= "10" & x"00014"; -- ISR Address + Offset (Reg 5 * 4 = 20 = 0x14)
+                tb_avs_address <= "00" & x"80005"; -- ISR Address + Offset (Reg 5 = 0x05)
                 tb_avs_write   <= '0';
                 tb_avs_read    <= '1';
                 
@@ -277,10 +277,10 @@ begin
 
         for y in 0 to 479 loop
             for x in 0 to 639 loop
-					loop
-						wait until rising_edge(clk);
-						exit when video_on = '1'; 
-					end loop;
+				loop
+					wait until rising_edge(clk);
+					exit when video_on = '1'; 
+				end loop;
                 
                 r_int := to_integer(unsigned(red));
                 g_int := to_integer(unsigned(green));
