@@ -5,6 +5,7 @@ greybox_tmp/
 hc_output/
 /output_files/
 /qdb/
+.qsys_edit/
 
 # Simulation files (ModelSim / Questa)
 simulation/
