@@ -1,4 +1,9 @@
+import os
+
 from vunit import VUnit
+
+os.environ["VUNIT_MODELSIM_INI"] = "sim/modelsim.ini"
+os.environ["VUNIT_MODELSIM_PATH"] = "/home/stiangglanda/altera_lite/25.1std/questa_fse/bin"
 
 # Create VUnit instance using QuestaSim
 vu = VUnit.from_argv(compile_builtins=False)
