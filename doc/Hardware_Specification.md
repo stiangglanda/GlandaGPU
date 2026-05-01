@@ -39,6 +39,7 @@ graph LR
 ```
 
 ## 1. Memory Map
+**System Integration Note:** In the current FPGA SoC design, the GlandaGPU is mapped to the physical base address `0x40000000`. The addresses listed below are relative to this base.
 
 The device address space is divided into two main regions, determined by bit 19 of the Avalon address (`0x080000`).
 
