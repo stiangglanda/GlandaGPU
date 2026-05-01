@@ -1,0 +1,10 @@
+[libraries]
+
+lib.files = [
+"src/vram.vhd",
+"src/gpu_engine.vhd",
+"src/vga_controller.vhd",
+"src/gpu_regs.vhd",
+"src/tb_vga.vhd",
+"src/top_gpu.vhd",
+]
