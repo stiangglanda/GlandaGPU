@@ -1,4 +1,5 @@
 # GlandaGPU v0.5
+[![VHDL CI](https://github.com/stiangglanda/GlandaGPU/actions/workflows/vunit-ci.yml/badge.svg)](https://github.com/stiangglanda/GlandaGPU/actions/workflows/vunit-ci.yml)
 
 This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal generation and provides hardware acceleration for basic geometric primitives.
 
