@@ -6,6 +6,7 @@ hc_output/
 /output_files/
 /qdb/
 .qsys_edit/
+vunit_out/
 
 # Simulation files (ModelSim / Questa)
 simulation/

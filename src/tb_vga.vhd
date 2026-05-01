@@ -3,7 +3,11 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use STD.TEXTIO.ALL; -- for File I/O
 
+library vunit_lib;
+context vunit_lib.vunit_context;
+
 entity tb_vga is
+    generic (runner_cfg : string);
 end tb_vga;
 
 architecture sim of tb_vga is
@@ -199,63 +203,70 @@ begin
             end if;
         end procedure;
     begin
-        reset <= '1';
-        wait for 100 ns;
-        reset <= '0';
-        wait for 100 ns;
+        test_runner_setup(runner, runner_cfg);
 
-        report "Starting GPU";
+        while test_suite loop
+            if run("test_vga") then
+                reset <= '1';
+                wait for 100 ns;
+                reset <= '0';
+                wait for 100 ns;
 
-        -- 6 = IER (Interrupt Enable Register) Bit 0 (Done) Bit 1 (VSync) -> 0x03
-        cpu_write(6, x"00000003"); 
-        report "Interrupts enabled.";
+                report "Starting GPU";
 
-        --- Clear Screen
-        cpu_write(4, x"00000008"); -- Dark Blue
-        cpu_write(1, x"00000011"); -- CMD 1, Start Bit 4
+                -- 6 = IER (Interrupt Enable Register) Bit 0 (Done) Bit 1 (VSync) -> 0x03
+                cpu_write(6, x"00000003"); 
+                report "Interrupts enabled.";
 
-        wait_and_clear_irq; -- Warten auf Done
-        report "Clear Screen Done (via Interrupt)";
+                --- Clear Screen
+                cpu_write(4, x"00000008"); -- Dark Blue
+                cpu_write(1, x"00000011"); -- CMD 1, Start Bit 4
 
-        report "Waiting for VSync Interrupt";
-        wait_and_clear_irq; -- Warten auf VSync
-        report "VSync reached";
+                wait_and_clear_irq; -- Warten auf Done
+                report "Clear Screen Done (via Interrupt)";
 
-        -- Draw Yellow Rectangle
-        cpu_write(2, x"00320032"); -- X0=50, Y0=50
-        cpu_write(3, x"006400C8"); -- W=200, H=100
-        cpu_write(4, x"00000FF0"); -- Yellow
-        cpu_write_and_start(1, x"00000012"); -- CMD=1 (Rect), Start=Bit 4 -> 0x12
+                report "Waiting for VSync Interrupt";
+                wait_and_clear_irq; -- Warten auf VSync
+                report "VSync reached";
 
-        wait_and_clear_irq;
-        report "Rectangle Done";
+                -- Draw Yellow Rectangle
+                cpu_write(2, x"00320032"); -- X0=50, Y0=50
+                cpu_write(3, x"006400C8"); -- W=200, H=100
+                cpu_write(4, x"00000FF0"); -- Yellow
+                cpu_write_and_start(1, x"00000012"); -- CMD=1 (Rect), Start=Bit 4 -> 0x12
 
-        -- Draw white line
-        cpu_write(2, x"0190000A"); -- X0=10, Y0=400
-        cpu_write(3, x"00320258"); -- X1=600, Y1=50
-        cpu_write(4, x"00000FFF"); -- White
-        cpu_write_and_start(1, x"00000013"); -- CMD=3 (Line), Start=Bit 4 -> 0x13
+                wait_and_clear_irq;
+                report "Rectangle Done";
 
-        wait_and_clear_irq;
-        report "Line Done";
+                -- Draw white line
+                cpu_write(2, x"0190000A"); -- X0=10, Y0=400
+                cpu_write(3, x"00320258"); -- X1=600, Y1=50
+                cpu_write(4, x"00000FFF"); -- White
+                cpu_write_and_start(1, x"00000013"); -- CMD=3 (Line), Start=Bit 4 -> 0x13
 
-        report "Testing VRAM Access";
-        -- Red Pixel at (0,0)
-        vram_write(0, x"F00");
-        -- Green Pixel at (1,0)
-        vram_write(1, x"0F0");
-        -- Blue Pixel at (2,0)
-        vram_write(2, x"00F");
-        
-        -- Read Back
-        vram_check(0, x"F00");
-        vram_check(1, x"0F0");
-        vram_check(2, x"00F");
-        report "VRAM Access Done";
+                wait_and_clear_irq;
+                report "Line Done";
 
-        wait for 20 ms;
-        sim_running <= false;
-        wait;
+                report "Testing VRAM Access";
+                -- Red Pixel at (0,0)
+                vram_write(0, x"F00");
+                -- Green Pixel at (1,0)
+                vram_write(1, x"0F0");
+                -- Blue Pixel at (2,0)
+                vram_write(2, x"00F");
+
+                -- Read Back
+                vram_check(0, x"F00");
+                vram_check(1, x"0F0");
+                vram_check(2, x"00F");
+                report "VRAM Access Done";
+
+                wait for 20 ms;
+                sim_running <= false;
+            end if;
+        end loop;
+
+        test_runner_cleanup(runner);
     end process;
 
     -- Capure VGA Output to PPM File

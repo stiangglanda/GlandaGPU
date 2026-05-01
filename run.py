@@ -1,7 +1,7 @@
 from vunit import VUnit
 
 # Create VUnit instance using QuestaSim
-vu = VUnit.from_argv(compile_builtins=True)
+vu = VUnit.from_argv(compile_builtins=False)
 vu.add_vhdl_builtins()
 
 # Create a library (replaces your 'work' lib)
