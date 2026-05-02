@@ -39,14 +39,15 @@ graph LR
 ```
 
 ## 1. Memory Map
-**System Integration Note:** In the current FPGA SoC design, the GlandaGPU is mapped to the physical base address `0x40000000`. The addresses listed below are relative to this base.
 
-The device address space is divided into two main regions, determined by bit 19 of the Avalon address (`0x080000`).
+**System Integration Note:** In the current FPGA SoC design, the GlandaGPU is physically mapped to the base address `0x40000000` on the ARM HPS. The addresses listed below are relative offsets from this base.
 
-| Region   | Word Base Address | Size     | Description                            |
-| :------- | :---------------- | :------- | :------------------------------------- |
-| **VRAM** | `0x000000`        | ~1.17 MB | Direct access to Video RAM.            |
-| **MMIO** | `0x080000`        | 7 Words  | Hardware control and status registers. |
+The device address space is divided into two main regions, determined by bit 21 of the CPU byte address (`0x200000`).
+
+| Region   | Byte Offset | Size     | Description                            |
+| :------- | :---------- | :------- | :------------------------------------- |
+| **VRAM** | `0x000000`  | ~1.17 MB | Direct access to Video RAM.            |
+| **MMIO** | `0x200000`  | 32 Bytes | Hardware control and status registers. |
 
 _Note: CPU access to VRAM is stalled (via Avalon waitrequest) if the 2D GPU engine is currently busy executing a command._
 
@@ -54,17 +55,17 @@ _Note: CPU access to VRAM is stalled (via Avalon waitrequest) if the 2D GPU engi
 
 ## 2. Register Map (MMIO)
 
-All registers are 32-bit wide and must be accessed via 32-bit aligned reads/writes. The base word address for these registers is `0x080000`.
+All registers are 32-bit wide and must be accessed via 32-bit aligned reads/writes. The base byte offset for these registers is `0x200000`.
 
-| Word Offset | Name     | Access | Description                                  |
+| Byte Offset | Name     | Access | Description                                  |
 | :---------- | :------- | :----- | :------------------------------------------- |
 | `0x00`      | `STATUS` | RO     | Hardware Status                              |
-| `0x01`      | `CTRL`   | R/W    | Engine Control & Command                     |
-| `0x02`      | `COORD0` | R/W    | Coordinate 0 (X0, Y0)                        |
-| `0x03`      | `COORD1` | R/W    | Coordinate 1 (X1/W, Y1/H)                    |
-| `0x04`      | `COLOR`  | R/W    | Fill/Draw Color                              |
-| `0x05`      | `ISR`    | R/W1C  | Interrupt Status Register (Write 1 to Clear) |
-| `0x06`      | `IER`    | R/W    | Interrupt Enable Register                    |
+| `0x04`      | `CTRL`   | R/W    | Engine Control & Command                     |
+| `0x08`      | `COORD0` | R/W    | Coordinate 0 (X0, Y0)                        |
+| `0x0C`      | `COORD1` | R/W    | Coordinate 1 (X1/W, Y1/H)                    |
+| `0x10`      | `COLOR`  | R/W    | Fill/Draw Color                              |
+| `0x14`      | `ISR`    | R/W1C  | Interrupt Status Register (Write 1 to Clear) |
+| `0x18`      | `IER`    | R/W    | Interrupt Enable Register                    |
 
 ### Register Bitfields
 
@@ -73,33 +74,33 @@ All registers are 32-bit wide and must be accessed via 32-bit aligned reads/writ
 - `Bit 0`: **BUSY** - `1` if the 2D engine is currently executing a command.
 - `Bit 1`: **VSYNC** - Current state of the VGA VSync signal.
 
-**`0x01` - CTRL**
+**`0x04` - CTRL**
 
 - `Bits 3:0`: **CMD** - Command to execute (see Section 3).
 - `Bit 4`: **START** - Write 1 to trigger the command execution. Writing a 1 generates a single-cycle internal pulse to start the GPU engine.
   Note: The register value does not auto-clear on readback. Do not poll this bit to check for command completion. poll the BUSY bit in the STATUS register (0x00) instead. You do not need to manually write a 0 to this bit before starting a new command.
 
-**`0x02` - COORD0**
+**`0x08` - COORD0**
 
 - `Bits 9:0`: **X0** - Starting X coordinate.
 - `Bits 25:16`: **Y0** - Starting Y coordinate.
 
-**`0x03` - COORD1**
+**`0x0C` - COORD1**
 
 - `Bits 9:0`: **X1 / W** - Ending X coordinate (for lines) or Width (for rects).
 - `Bits 25:16`: **Y1 / H** - Ending Y coordinate (for lines) or Height (for rects).
 
-**`0x04` - COLOR**
+**`0x10` - COLOR**
 
 - `Bits 11:0`: **RGB** - 12-bit color value (Bits 11:8 Red, 7:4 Green, 3:0 Blue).
 
-**`0x05` - ISR (Interrupt Status)**
+**`0x14` - ISR (Interrupt Status)**
 
 - `Bit 0`: **DONE_INT** - Set to `1` on the falling edge of the engine BUSY signal.
 - `Bit 1`: **VSYNC_INT** - Set to `1` on the falling edge of the VSYNC signal.
 - _Note: Write `1` to the respective bit to clear the interrupt._
 
-**`0x06` - IER (Interrupt Enable)**
+**`0x18` - IER (Interrupt Enable)**
 
 - `Bit 0`: **DONE_EN** - Write `1` to enable the Engine Done interrupt.
 - `Bit 1`: **VSYNC_EN** - Write `1` to enable the VSync interrupt.
@@ -130,7 +131,7 @@ To submit a command, populate the required registers (`COORD0`, `COORD1`, `COL
 The GPU exposes a single `irq` line to the system.
 
 - The IRQ line is asserted high when `(ISR & IER) != 0`.
-- The driver should read the `ISR` (`Word Offset 0x05`) to determine the cause of the interrupt.
+- The driver should read the `ISR` (`Byte Offset 0x14`) to determine the cause of the interrupt.
 - The driver must acknowledge the interrupt by writing the read value back to the `ISR` (Write-1-to-Clear).
 
 ---
@@ -146,10 +147,10 @@ The GPU exposes a single `irq` line to the system.
 
 ### VRAM Layout
 
-- **Word Base Address:** `0x000000`
-- **Size:** 307,200 pixels (640 * 480).
+- **Byte Address Offset:** `0x000000`
+- **Size:** 307,200 pixels (640 \* 480).
 - **Addressing:** Linear framebuffer. Each pixel occupies a 32-bit word on the Avalon bus, though only the lower 12 bits are used.
-- **Pixel Offset Calculation:** `Word_Address = (Y * 640 + X)`
+- **Pixel Offset Calculation:** `Byte_Address = (Y * 640 + X) * 4`
 - **Pixel Format (XRGB 4-4-4):**
   - Bits 31:12 - Ignored / Read as 0
   - Bits 11:8 - Red
