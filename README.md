@@ -1,4 +1,4 @@
-# GlandaGPU v0.5
+# GlandaGPU v0.6
 
 [![VHDL CI](https://github.com/stiangglanda/GlandaGPU/actions/workflows/vunit-ci.yml/badge.svg)](https://github.com/stiangglanda/GlandaGPU/actions/workflows/vunit-ci.yml)
 

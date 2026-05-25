@@ -63,8 +63,7 @@ architecture Structural of top_gpu is
     signal hsync_internal : std_logic;
     signal video_on_internal : std_logic;
 begin    
-    -- dicide if access is for VRAM or Registers (bit 21 = 0 for VRAM, 1 for Registers)
-    -- reg_cs <= avs_address(21);
+    -- dicide if access is for VRAM or Registers (bit 19 = 0 for VRAM, 1 for Registers)
     reg_cs <= avs_address(19); -- 0x00200000 (Byte) = 0x080000 (Word) -> Bit 19!
 
     -- Write Enable for Registers
@@ -73,40 +72,29 @@ begin
     -- Write Enable for VRAM
     cpu_we_vram <= avs_write when (reg_cs = '0' and gpu_busy = '0') else '0'; 
 
-    -- Convert Byte Address (CPU) to Word/Pixel Index (VRAM)
-    -- Shift right by 2 (divide by 4) effectively ignores the byte-offset bits (1 downto 0).
-    -- Example: 0x00->0, 0x04->1, 0x08->2
-    cpu_addr_vram <= avs_address(18 downto 0); -- 19 bits
+    cpu_addr_vram <= avs_address(18 downto 0);
     
     -- pixel data for writing to VRAM
     cpu_din_vram  <= avs_writedata(11 downto 0); 
     
     -- wait If GPU is busy and CPU tries to access VRAM
-    -- avs_waitrequest <= '1' when (reg_cs = '0' and gpu_busy = '1') else '0';
     avs_waitrequest <= '1' when (reg_cs = '0' and gpu_busy = '1' and (avs_read = '1' or avs_write = '1')) else '0';
-    -- avs_waitrequest <= '0';
-
 
     -- If GPU is busy, it has control over VRAM Port A, otherwise CPU can access it
     mux_we_a   <= gpu_we   when gpu_busy = '1' else cpu_we_vram;
     mux_addr_a <= gpu_addr when gpu_busy = '1' else cpu_addr_vram;
     mux_din_a  <= gpu_din  when gpu_busy = '1' else cpu_din_vram;
 
+    -- Output data from either GPU registers or VRAM depending on the access type
     process(reg_cs, reg_dout, vram_dout_cpu)
     begin
         if reg_cs = '1' then
-            -- Wir geben die echten Registerinhalte der GPU-Engine zurück
             avs_readdata <= reg_dout; 
         else
-            -- Wir geben die VRAM-Daten zurück (mit 32-Bit Auffüllung)
             avs_readdata <= (others => '0');
             avs_readdata(vram_dout_cpu'range) <= vram_dout_cpu;
         end if;
     end process;
-
-    -- Output data from either GPU registers or VRAM depending on the access type
-    --avs_readdata <= reg_dout when (reg_cs = '1' and avs_read = '1') else 
-    --                (31 downto 12 => '0') & vram_dout_cpu; -- vram_dout_cpu = pixrl data
 
     -- VRAM Instanz
     vram_inst : entity work.vram
