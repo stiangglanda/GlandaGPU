@@ -4,21 +4,21 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity gpu_engine is
     Port (
-        clk          : in  std_logic;
-        reset        : in  std_logic;
+        clk          : in  std_ulogic;
+        reset        : in  std_ulogic;
         -- Register Interface
-        reg_cmd      : in  std_logic_vector(3 downto 0); -- 1=Clear, 2=Rect, 3=Line
+        reg_cmd      : in  std_ulogic_vector(3 downto 0); -- 1=Clear, 2=Rect, 3=Line
         reg_x        : in  unsigned(9 downto 0);
         reg_y        : in  unsigned(9 downto 0);
         reg_w        : in  unsigned(9 downto 0);
         reg_h        : in  unsigned(9 downto 0);
-        reg_color    : in  std_logic_vector(11 downto 0);
-        reg_start    : in  std_logic;
-        busy         : out std_logic;
+        reg_color    : in  std_ulogic_vector(11 downto 0);
+        reg_start    : in  std_ulogic;
+        busy         : out std_ulogic;
         -- VRAM Interface
-        vram_we      : out std_logic;
-        vram_addr    : out std_logic_vector(18 downto 0);
-        vram_din     : out std_logic_vector(11 downto 0)
+        vram_we      : out std_ulogic;
+        vram_addr    : out std_ulogic_vector(18 downto 0);
+        vram_din     : out std_ulogic_vector(11 downto 0)
     );
 end gpu_engine;
 
@@ -80,7 +80,7 @@ begin
                     
                     when STATE_CLEAR =>
                         vram_we <= '1';
-                        vram_addr <= std_logic_vector(clear_addr);
+                        vram_addr <= std_ulogic_vector(clear_addr);
                         vram_din  <= reg_color;
 
                         if clear_addr < VRAM_MAX_ADDR - 1 then
@@ -92,7 +92,7 @@ begin
                     when STATE_RECT =>
                         if (to_integer(reg_y + curr_y) < 480) and (to_integer(reg_x + curr_x) < 640) then
                             vram_we   <= '1';
-                            vram_addr <= std_logic_vector(to_unsigned((to_integer(reg_y) + to_integer(curr_y)) * 640 + (to_integer(reg_x) + to_integer(curr_x)), 19));
+                            vram_addr <= std_ulogic_vector(to_unsigned((to_integer(reg_y) + to_integer(curr_y)) * 640 + (to_integer(reg_x) + to_integer(curr_x)), 19));
                             vram_din  <= reg_color;
                         else vram_we <= '0';
                         end if;
@@ -132,7 +132,7 @@ begin
                     when STATE_LINE_DRAW =>
                         if x0 >= 0 and x0 < 640 and y0 >= 0 and y0 < 480 then
                             vram_we   <= '1';
-                            vram_addr <= std_logic_vector(to_unsigned(to_integer(y0) * 640 + to_integer(x0), 19));
+                            vram_addr <= std_ulogic_vector(to_unsigned(to_integer(y0) * 640 + to_integer(x0), 19));
                             vram_din  <= reg_color;
                         else
                             vram_we <= '0';

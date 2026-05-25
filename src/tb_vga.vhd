@@ -11,23 +11,23 @@ entity tb_vga is
 end tb_vga;
 
 architecture sim of tb_vga is
-    signal clk     : std_logic := '0';
-	signal reset   : std_logic := '0';
-    signal hsync   : std_logic;
-    signal vsync   : std_logic;
-	signal video_on: std_logic;
-    signal red     : std_logic_vector(3 downto 0);
-    signal green   : std_logic_vector(3 downto 0);
-    signal blue    : std_logic_vector(3 downto 0);
+    signal clk     : std_ulogic := '0';
+	signal reset   : std_ulogic := '0';
+    signal hsync   : std_ulogic;
+    signal vsync   : std_ulogic;
+	signal video_on: std_ulogic;
+    signal red     : std_ulogic_vector(3 downto 0);
+    signal green   : std_ulogic_vector(3 downto 0);
+    signal blue    : std_ulogic_vector(3 downto 0);
 
-    signal tb_avs_address   : std_logic_vector(21 downto 0);
-    signal tb_avs_write     : std_logic;
-    signal tb_avs_writedata    : std_logic_vector(31 downto 0);
-    signal tb_avs_read      : std_logic := '0';
-    signal tb_avs_readdata   : std_logic_vector(31 downto 0);
-    signal tb_avs_waitrequest   : std_logic;
+    signal tb_avs_address   : std_ulogic_vector(21 downto 0);
+    signal tb_avs_write     : std_ulogic;
+    signal tb_avs_writedata    : std_ulogic_vector(31 downto 0);
+    signal tb_avs_read      : std_ulogic := '0';
+    signal tb_avs_readdata   : std_ulogic_vector(31 downto 0);
+    signal tb_avs_waitrequest   : std_ulogic;
 
-    signal tb_irq : std_logic;
+    signal tb_irq : std_ulogic;
     
     -- Simulation Control
     constant CLK_PERIOD : time := 40 ns; -- 25 MHz
@@ -68,11 +68,11 @@ begin
 
     stimuli: process
         -- Helper functions
-        procedure cpu_write(addr : in integer; data : in std_logic_vector(31 downto 0)) is
+        procedure cpu_write(addr : in integer; data : in std_ulogic_vector(31 downto 0)) is
         begin
             wait until rising_edge(clk);
             -- Add Bit 19 for Register Access, map address directly
-            tb_avs_address <= std_logic_vector(resize(to_unsigned(addr, 22) or "00" & x"80000", 22)); 
+            tb_avs_address <= std_ulogic_vector(resize(to_unsigned(addr, 22) or "00" & x"80000", 22)); 
             tb_avs_writedata  <= data;
             tb_avs_write   <= '1';
             wait until rising_edge(clk);
@@ -80,11 +80,11 @@ begin
             tb_avs_writedata  <= (others => '0');
         end procedure;
 
-        procedure cpu_write_and_start(addr : in integer; data : in std_logic_vector(31 downto 0)) is
+        procedure cpu_write_and_start(addr : in integer; data : in std_ulogic_vector(31 downto 0)) is
         begin
             wait until rising_edge(clk);
              -- Add Bit 19 for Register Access
-            tb_avs_address <= std_logic_vector(resize(to_unsigned(addr, 22) or "00" & x"80000", 22));
+            tb_avs_address <= std_ulogic_vector(resize(to_unsigned(addr, 22) or "00" & x"80000", 22));
             tb_avs_writedata  <= data;
             tb_avs_write   <= '1';
             wait until rising_edge(clk);
@@ -118,7 +118,7 @@ begin
         end procedure;
 
         procedure wait_and_clear_irq is
-            variable isr_val : std_logic_vector(31 downto 0);
+            variable isr_val : std_ulogic_vector(31 downto 0);
         begin
             if tb_irq = '1' then
                 wait until tb_irq = '0';
@@ -160,10 +160,10 @@ begin
             wait until tb_irq = '0';
         end procedure;
 
-        procedure vram_write(offset : in integer; color : in std_logic_vector(11 downto 0)) is
+        procedure vram_write(offset : in integer; color : in std_ulogic_vector(11 downto 0)) is
         begin
             wait until rising_edge(clk);
-            tb_avs_address <= std_logic_vector(to_unsigned(offset, 22)); -- Direct VRAM mapping
+            tb_avs_address <= std_ulogic_vector(to_unsigned(offset, 22)); -- Direct VRAM mapping
             tb_avs_writedata  <= x"00000" & color;
             tb_avs_write   <= '1';
             
@@ -176,11 +176,11 @@ begin
             tb_avs_writedata  <= (others => '0');
         end procedure;
 
-        procedure vram_check(offset : in integer; expected : in std_logic_vector(11 downto 0)) is
-            variable read_val : std_logic_vector(31 downto 0);
+        procedure vram_check(offset : in integer; expected : in std_ulogic_vector(11 downto 0)) is
+            variable read_val : std_ulogic_vector(31 downto 0);
         begin
             wait until rising_edge(clk);
-            tb_avs_address <= std_logic_vector(to_unsigned(offset, 22));
+            tb_avs_address <= std_ulogic_vector(to_unsigned(offset, 22));
             tb_avs_write   <= '0';
             tb_avs_read    <= '1';
             

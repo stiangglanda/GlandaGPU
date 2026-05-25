@@ -63,7 +63,6 @@ set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_RO
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name VHDL_FILE src/gpu_engine.vhd
 set_global_assignment -name VHDL_FILE src/gpu_regs.vhd
-set_global_assignment -name VHDL_FILE src/tb_vga.vhd
 set_global_assignment -name VHDL_FILE src/top_gpu.vhd
 set_global_assignment -name VHDL_FILE src/vga_controller.vhd
 set_global_assignment -name VHDL_FILE src/vram.vhd

@@ -4,64 +4,64 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity top_gpu is
     Port ( 
-        clk   : in std_logic;
-        reset : in std_logic;
+        clk   : in std_ulogic;
+        reset : in std_ulogic;
 
         -- Avalon-MM Interface
-        avs_address     : in std_logic_vector(21 downto 0);
-        avs_write       : in std_logic;
-        avs_writedata   : in std_logic_vector(31 downto 0);
-        avs_read        : in std_logic;
-        avs_readdata    : out std_logic_vector(31 downto 0);
-        avs_waitrequest : out std_logic;
+        avs_address     : in std_ulogic_vector(21 downto 0);
+        avs_write       : in std_ulogic;
+        avs_writedata   : in std_ulogic_vector(31 downto 0);
+        avs_read        : in std_ulogic;
+        avs_readdata    : out std_ulogic_vector(31 downto 0);
+        avs_waitrequest : out std_ulogic;
 
         -- VGA Interface
-        hsync : out std_logic;
-        vsync : out std_logic;
-        video_on : out std_logic;
-        red, green, blue : out std_logic_vector(3 downto 0);
+        hsync : out std_ulogic;
+        vsync : out std_ulogic;
+        video_on : out std_ulogic;
+        red, green, blue : out std_ulogic_vector(3 downto 0);
 
-        irq : out std_logic
+        irq : out std_ulogic
     );
 end top_gpu;
 
 architecture Structural of top_gpu is
-    signal vram_addr_vga : std_logic_vector(18 downto 0);
-    signal vram_data_vga : std_logic_vector(11 downto 0);
+    signal vram_addr_vga : std_ulogic_vector(18 downto 0);
+    signal vram_data_vga : std_ulogic_vector(11 downto 0);
     
-    signal gpu_we   : std_logic := '0';
-    signal gpu_addr : std_logic_vector(18 downto 0) := (others => '0');
-    signal gpu_din  : std_logic_vector(11 downto 0) := (others => '0');
+    signal gpu_we   : std_ulogic := '0';
+    signal gpu_addr : std_ulogic_vector(18 downto 0) := (others => '0');
+    signal gpu_din  : std_ulogic_vector(11 downto 0) := (others => '0');
     
     -- CPU VRAM Access
-    signal cpu_we_vram   : std_logic;
-    signal cpu_addr_vram : std_logic_vector(18 downto 0);
-    signal cpu_din_vram  : std_logic_vector(11 downto 0);
-    signal vram_dout_cpu : std_logic_vector(11 downto 0);
+    signal cpu_we_vram   : std_ulogic;
+    signal cpu_addr_vram : std_ulogic_vector(18 downto 0);
+    signal cpu_din_vram  : std_ulogic_vector(11 downto 0);
+    signal vram_dout_cpu : std_ulogic_vector(11 downto 0);
     
     -- Multiplexed signals to VRAM Port A
-    signal mux_we_a   : std_logic;
-    signal mux_addr_a : std_logic_vector(18 downto 0);
-    signal mux_din_a  : std_logic_vector(11 downto 0);
+    signal mux_we_a   : std_ulogic;
+    signal mux_addr_a : std_ulogic_vector(18 downto 0);
+    signal mux_din_a  : std_ulogic_vector(11 downto 0);
     
     -- Register Interface
-    signal reg_dout   : std_logic_vector(31 downto 0);
-    signal reg_cs     : std_logic;
-    signal bus_we_reg : std_logic;
+    signal reg_dout   : std_ulogic_vector(31 downto 0);
+    signal reg_cs     : std_ulogic;
+    signal bus_we_reg : std_ulogic;
 
     -- Register Interface (GPU Signals)
-    signal reg_cmd   : std_logic_vector(3 downto 0); -- 1=Clear, 2=Rect, 3=Line
+    signal reg_cmd   : std_ulogic_vector(3 downto 0); -- 1=Clear, 2=Rect, 3=Line
     signal reg_x     : unsigned(9 downto 0);
     signal reg_y     : unsigned(9 downto 0);
     signal reg_w     : unsigned(9 downto 0);
     signal reg_h     : unsigned(9 downto 0);
-    signal reg_color : std_logic_vector(11 downto 0);
-    signal reg_start : std_logic;
-    signal gpu_busy  : std_logic;
+    signal reg_color : std_ulogic_vector(11 downto 0);
+    signal reg_start : std_ulogic;
+    signal gpu_busy  : std_ulogic;
 
-    signal vsync_internal : std_logic;
-    signal hsync_internal : std_logic;
-    signal video_on_internal : std_logic;
+    signal vsync_internal : std_ulogic;
+    signal hsync_internal : std_ulogic;
+    signal video_on_internal : std_ulogic;
 begin    
     -- dicide if access is for VRAM or Registers (bit 19 = 0 for VRAM, 1 for Registers)
     reg_cs <= avs_address(19); -- 0x00200000 (Byte) = 0x080000 (Word) -> Bit 19!

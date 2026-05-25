@@ -4,41 +4,41 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity gpu_regs is
     Port (
-        clk       : in  std_logic;
-        reset     : in  std_logic;
+        clk       : in  std_ulogic;
+        reset     : in  std_ulogic;
 
         -- Bus Interface
-        bus_addr  : in  std_logic_vector(3 downto 0);
-        bus_we    : in  std_logic;
-        bus_din   : in  std_logic_vector(31 downto 0);
-        bus_dout  : out std_logic_vector(31 downto 0);
+        bus_addr  : in  std_ulogic_vector(3 downto 0);
+        bus_we    : in  std_ulogic;
+        bus_din   : in  std_ulogic_vector(31 downto 0);
+        bus_dout  : out std_ulogic_vector(31 downto 0);
 
         -- Register Interface
         gpu_x0, gpu_y0 : out unsigned(9 downto 0);
         gpu_x1, gpu_y1 : out unsigned(9 downto 0);
-        gpu_color      : out std_logic_vector(11 downto 0);
-        gpu_cmd        : out std_logic_vector(3 downto 0);
-        gpu_start      : out std_logic;
-        gpu_busy       : in  std_logic;
-        vga_vsync      : in  std_logic;
+        gpu_color      : out std_ulogic_vector(11 downto 0);
+        gpu_cmd        : out std_ulogic_vector(3 downto 0);
+        gpu_start      : out std_ulogic;
+        gpu_busy       : in  std_ulogic;
+        vga_vsync      : in  std_ulogic;
 
-        irq : out std_logic
+        irq : out std_ulogic
     );
 end gpu_regs;
 
 architecture Behavioral of gpu_regs is
-    signal reg_coord0 : std_logic_vector(31 downto 0) := (others => '0');
-    signal reg_coord1 : std_logic_vector(31 downto 0) := (others => '0');
-    signal reg_color  : std_logic_vector(31 downto 0) := (others => '0');
-    signal reg_ctrl   : std_logic_vector(31 downto 0) := (others => '0');
+    signal reg_coord0 : std_ulogic_vector(31 downto 0) := (others => '0');
+    signal reg_coord1 : std_ulogic_vector(31 downto 0) := (others => '0');
+    signal reg_color  : std_ulogic_vector(31 downto 0) := (others => '0');
+    signal reg_ctrl   : std_ulogic_vector(31 downto 0) := (others => '0');
     
-    signal start_pulse : std_logic := '0';
+    signal start_pulse : std_ulogic := '0';
 
-    signal reg_ie : std_logic_vector(31 downto 0) := (others => '0'); -- Interrupt Enable Register (0=Done, 1=VSync)
-    signal reg_ip : std_logic_vector(31 downto 0) := (others => '0'); -- IP = Interrupt Pending
+    signal reg_ie : std_ulogic_vector(31 downto 0) := (others => '0'); -- Interrupt Enable Register (0=Done, 1=VSync)
+    signal reg_ip : std_ulogic_vector(31 downto 0) := (others => '0'); -- IP = Interrupt Pending
 
-    signal busy_old   : std_logic := '0';
-    signal vsync_old  : std_logic := '0';
+    signal busy_old   : std_ulogic := '0';
+    signal vsync_old  : std_ulogic := '0';
 begin
 
     -- Write-Logik (CPU -> GPU)
@@ -103,7 +103,7 @@ begin
 
     -- Interrupt Management
     process(clk)
-        variable ip_next : std_logic_vector(31 downto 0);
+        variable ip_next : std_ulogic_vector(31 downto 0);
     begin
         if rising_edge(clk) then
             busy_old  <= gpu_busy;

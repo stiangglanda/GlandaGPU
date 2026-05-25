@@ -8,21 +8,21 @@ entity vram is
         DATA_WIDTH : integer := 12  -- 4-4-4 RGB
     );
     port (
-        clk     : in  std_logic;
+        clk     : in  std_ulogic;
         -- Read/Write to VRAM
-        we_a    : in  std_logic;
-        addr_a  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
-        din_a   : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-        dout_a  : out std_logic_vector(DATA_WIDTH-1 downto 0);
+        we_a    : in  std_ulogic;
+        addr_a  : in  std_ulogic_vector(ADDR_WIDTH-1 downto 0);
+        din_a   : in  std_ulogic_vector(DATA_WIDTH-1 downto 0);
+        dout_a  : out std_ulogic_vector(DATA_WIDTH-1 downto 0);
         -- Read from VRAM
-        addr_b  : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
-        dout_b  : out std_logic_vector(DATA_WIDTH-1 downto 0)
+        addr_b  : in  std_ulogic_vector(ADDR_WIDTH-1 downto 0);
+        dout_b  : out std_ulogic_vector(DATA_WIDTH-1 downto 0)
     );
 end vram;
 
 architecture Behavioral of vram is
     constant RAM_DEPTH : integer := 307200; -- 640x480
-    type ram_type is array (0 to RAM_DEPTH - 1) of std_logic_vector(DATA_WIDTH-1 downto 0);
+    type ram_type is array (0 to RAM_DEPTH - 1) of std_ulogic_vector(DATA_WIDTH-1 downto 0);
     
     -- Block RAM inference
     signal ram : ram_type;

@@ -4,16 +4,16 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity vga_controller is
     Port ( 
-        clk         : in  STD_LOGIC; -- 25 MHz
-        reset       : in  STD_LOGIC;
-        pixel_data  : in  STD_LOGIC_VECTOR(11 downto 0);
-        pixel_addr  : out STD_LOGIC_VECTOR(18 downto 0);
-        hsync       : out STD_LOGIC;
-        vsync       : out STD_LOGIC;
-		video_on    : out STD_LOGIC;
-        red         : out STD_LOGIC_VECTOR (3 downto 0);
-        green       : out STD_LOGIC_VECTOR (3 downto 0);
-        blue        : out STD_LOGIC_VECTOR (3 downto 0)
+        clk         : in  std_ulogic; -- 25 MHz
+        reset       : in  std_ulogic;
+        pixel_data  : in  std_ulogic_vector(11 downto 0);
+        pixel_addr  : out std_ulogic_vector(18 downto 0);
+        hsync       : out std_ulogic;
+        vsync       : out std_ulogic;
+		video_on    : out std_ulogic;
+        red         : out std_ulogic_vector(3 downto 0);
+        green       : out std_ulogic_vector(3 downto 0);
+        blue        : out std_ulogic_vector(3 downto 0)
     );
 end vga_controller;
 
@@ -39,13 +39,13 @@ architecture Behavioral of vga_controller is
     signal v_cnt : integer range 0 to V_TOTAL - 1 := 0;
 
     -- fix for delay problem of VRAM
-    signal hsync_i    : std_logic;
-    signal vsync_i    : std_logic;
-    signal video_on_i : std_logic;
+    signal hsync_i    : std_ulogic;
+    signal vsync_i    : std_ulogic;
+    signal video_on_i : std_ulogic;
 
-    signal hsync_v1, hsync_v2       : std_logic := '1';
-    signal vsync_v1, vsync_v2       : std_logic := '1';
-    signal video_on_v1, video_on_v2 : std_logic := '0';
+    signal hsync_v1, hsync_v2       : std_ulogic := '1';
+    signal vsync_v1, vsync_v2       : std_ulogic := '1';
+    signal video_on_v1, video_on_v2 : std_ulogic := '0';
 
 begin
 
@@ -78,7 +78,7 @@ begin
     -- video_on Signal
     video_on_i <= '1' when (h_cnt < H_ACTIVE) and (v_cnt < V_ACTIVE) else '0';
     -- Calculate Pixeladdresse
-    pixel_addr <= std_logic_vector(to_unsigned(v_cnt * 640 + h_cnt, 19)) 
+    pixel_addr <= std_ulogic_vector(to_unsigned(v_cnt * 640 + h_cnt, 19)) 
                   when (video_on_i = '1') else (others => '0');
 
     -- Delay hsync, vsync und video_on for 2 Takte, so they are in sync with the PixelData from VRAM
