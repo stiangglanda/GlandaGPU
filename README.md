@@ -5,8 +5,8 @@
 This Simple GPU is a memory-mapped 2D acceleration core. It handles VGA signal generation and provides hardware acceleration for basic geometric primitives.
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=9Oxhgr2rtWc">
-    <img src="https://img.youtube.com/vi/9Oxhgr2rtWc/maxresdefault.jpg" width="600">
+  <a href="https://www.youtube.com/watch?v=fykBoT6yBR8">
+    <img src="https://img.youtube.com/vi/fykBoT6yBR8/maxresdefault.jpg" width="600">
     <br>
     ▶ Watch Video
   </a>
@@ -38,7 +38,7 @@ The QEMU device model acts as a **software twin of the hardware**, enabling rapi
 
 ## Architecture
 
-The GlandaGPU connects to the ARM host system via an Avalon Memory-Mapped (Avalon-MM) bus, physically mapped at base address `0x40000000`. It is composed of three main blocks:
+The GlandaGPU connects to the ARM host system via an Avalon Memory-Mapped (Avalon-MM) bus, physically mapped at base address **0x40000000** on the Avalon bus (which translates to **0xC0000000** on the ARM HPS side). It is composed of three main blocks:
 
 1.  **VGA Controller:** Reads from VRAM and generates the video timing signals.
 2.  **2D Command Engine:** A hardware accelerator that performs fast drawing operations (Fill, Rect, Line) directly into VRAM, relieving the CPU.
@@ -100,5 +100,24 @@ The immediate next step is **writing a Linux device driver**. To facilitate this
 
 - [x] **Simple Linux Driver:** Create a basic platform driver to map memory and verify register access.
 - [x] **QEMU Device Model:** Implement a software emulation of the GlandaGPU in QEMU to test the driver in a virtual environment.
-- [ ] **DRM/KMS Driver:** Expand the driver to support the Linux Direct Rendering Manager (DRM) subsystem.
-- [x] **FPGA Verification:** Validate the VHDL and driver on physical FPGA hardware (currently only simulated).
+- [x] **DRM/KMS Driver:** Expand the driver to support the Linux Direct Rendering Manager (DRM) subsystem.
+- [x] **FPGA Verification:** Validate the VHDL and driver on physical FPGA hardware.
+- [ ] **Hardware Pipeline Upgrade:** Transition from 12-bit color depth to native 32-bit (XRGB8888) to eliminate CPU overhead during frame updates.
+
+## Build and Simulation
+
+This project uses VUnit with QuestaSim for verification. For physical FPGA synthesis, the GPU is integrated as an IP core into a complete SoC design.
+
+### Simulation (VUnit)
+Requires Python 3 (`pip install vunit_hdl`) and QuestaSim.
+
+1. Run all automated tests:
+   `python run.py`
+2. Run with GUI for waveform inspection:
+   `python run.py --gui`
+
+### FPGA Integration and Synthesis
+This repository contains the standalone GPU IP. To build the complete bitstream for the Terasic DE10-Standard, the GPU must be instantiated within Qsys/Platform Designer alongside the HPS.
+
+The full Quartus project, including the Terasic reference design and the integrated GlandaGPU IP, can be found in this separate repository:
+[DE10-Standard SoC Integration](https://github.com/stiangglanda/GlandaGPU_SoC)
